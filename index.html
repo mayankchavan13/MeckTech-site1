@@ -11,13 +11,11 @@
       background-color: #121212;
       color: white;
     }
-
     .container {
       max-width: 700px;
       margin: auto;
       padding: 2rem;
     }
-
     input, textarea {
       width: 100%;
       padding: 0.8rem;
@@ -27,7 +25,6 @@
       background-color: #1e1e1e;
       color: white;
     }
-
     button {
       padding: 0.8rem 2rem;
       margin-top: 1rem;
@@ -38,50 +35,27 @@
       border-radius: 5px;
       cursor: pointer;
     }
-
-    .hidden {
-      display: none;
-    }
-
+    .hidden { display: none; }
     .question-box {
       margin-top: 2rem;
       background: #1e1e1e;
       padding: 1rem;
       border-radius: 8px;
     }
-
-    .question-box p {
-      margin-bottom: 1rem;
-    }
-
-    label {
-      display: block;
-      margin-top: 1rem;
-    }
-
-    .options label {
-      display: block;
-      margin: 0.5rem 0;
-    }
-
-    #result {
-      font-size: 1.5rem;
-      margin-top: 2rem;
-    }
-
+    label { display: block; margin-top: 1rem; }
+    .options label { margin: 0.5rem 0; display: block; }
+    #result { font-size: 1.5rem; margin-top: 2rem; }
     #fullscreen-warning {
       color: red;
       margin-top: 1rem;
       font-weight: bold;
     }
-
-    .strike {
-      text-decoration: line-through;
-      color: grey;
-    }
+    .strike { text-decoration: line-through; color: grey; }
   </style>
 </head>
 <body>
+
+<!-- Branding -->
 <div style="text-align:center; margin-top: 20px;">
   <img id="brandLogo" src="" style="max-height:80px; display:none;" />
   <h1 id="brandName">Loading...</h1>
@@ -127,6 +101,8 @@
       <small>MeckTech doesn't claim any partnership with any other company, this assessment is based on your personal knowledge about CS/Ai-ML course. We hope our certificate helps you in future, All the best.</small>
     </div>
   </div>
+</div>
+
 <script>
 let questions = [];
 let currentIndex = 0;
@@ -135,15 +111,30 @@ let userName = "";
 let userEmail = "";
 let userScore = 0;
 
-// 🔁 Load questions from GitHub
+async function loadBranding() {
+  try {
+    const res = await fetch("https://raw.githubusercontent.com/mayankchavan13/MeckTech-site-admin/main/branding.json");
+    const data = await res.json();
+    if (data.name) document.getElementById("brandName").innerText = data.name;
+    if (data.logo) {
+      const img = document.getElementById("brandLogo");
+      img.src = data.logo;
+      img.style.display = "inline-block";
+    }
+  } catch (e) {
+    console.error("❌ Branding load failed:", e);
+  }
+}
+loadBranding();
+
 async function loadQuestions() {
   try {
     const res = await fetch("https://raw.githubusercontent.com/mayankchavan13/MeckTech-site-admin/main/questions.json");
     const data = await res.json();
-    questions = shuffle(data).slice(0, 20); // use first 20
+    questions = shuffle(data).slice(0, 20);
     showQuestion();
   } catch (err) {
-    alert("Failed to load questions. Please try later.");
+    alert("❌ Failed to load questions. Please try again.");
     console.error(err);
   }
 }
@@ -156,12 +147,10 @@ function startTest() {
   userName = document.getElementById("name").value.trim();
   userEmail = document.getElementById("email").value.trim();
   const userAddress = document.getElementById("address").value.trim();
-
   if (!userName || !userEmail || !userAddress) {
     alert("Please fill all required details.");
     return;
   }
-
   document.getElementById("start-section").classList.add("hidden");
   document.getElementById("quiz-section").classList.remove("hidden");
   launchFullscreen(document.documentElement);
@@ -173,7 +162,6 @@ function showQuestion() {
     endTest();
     return;
   }
-
   const q = questions[currentIndex];
   const container = document.getElementById("question-box");
   container.innerHTML = `
@@ -192,12 +180,9 @@ function nextQuestion() {
     alert("Please select an option.");
     return;
   }
-
-  const answer = selected.value;
-  if (answer === questions[currentIndex].correct) {
+  if (selected.value === questions[currentIndex].correct) {
     correctAnswers++;
   }
-
   currentIndex++;
   showQuestion();
 }
@@ -208,13 +193,12 @@ function endTest() {
   document.getElementById("quiz-section").classList.add("hidden");
   document.getElementById("result-section").classList.remove("hidden");
   document.getElementById("result").innerText = `You got ${correctAnswers} out of 20 correct.`;
-
   if (correctAnswers >= 15) {
     document.getElementById("payment-section").classList.remove("hidden");
   }
 }
 
-// Fullscreen handling
+// Fullscreen cancel
 function launchFullscreen(element) {
   if (element.requestFullscreen) {
     element.requestFullscreen();
@@ -224,7 +208,6 @@ function launchFullscreen(element) {
     element.msRequestFullscreen();
   }
 }
-
 function exitFullscreen() {
   if (document.exitFullscreen) {
     document.exitFullscreen();
@@ -232,11 +215,8 @@ function exitFullscreen() {
     document.webkitExitFullscreen();
   }
 }
-
 document.addEventListener("fullscreenchange", checkFullscreen);
 document.addEventListener("webkitfullscreenchange", checkFullscreen);
-document.addEventListener("mozfullscreenchange", checkFullscreen);
-
 function checkFullscreen() {
   if (!document.fullscreenElement && !document.webkitFullscreenElement) {
     document.getElementById("fullscreen-warning").classList.remove("hidden");
@@ -245,15 +225,16 @@ function checkFullscreen() {
   }
 }
 </script>
+
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 <script>
 function payNow() {
   const options = {
-    key: "rzp_test_YourKeyHere", // 🔁 Replace with your Razorpay key
-    amount: 14900, // in paise
+    key: "rzp_live_YourKeyHere", // 🟠 Replace this
+    amount: 14900,
     currency: "INR",
     name: "MeckTech Certificate",
-    description: "CS/AI-ML Assessment Certificate",
+    description: "CS/AI-ML Certificate",
     handler: function (response) {
       document.getElementById("payment-section").classList.add("hidden");
       document.getElementById("success-message").classList.remove("hidden");
@@ -272,71 +253,42 @@ function payNow() {
 }
 
 async function savePaidUser() {
-  const username = "mayankchavan13";
-  const repo = "MeckTech-site-admin";
-  const token = "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"; // 🔁 Replace with your GitHub token
+  const token = "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"; // 🟠 Replace this
   const file = "paid_users.json";
-  const url = `https://api.github.com/repos/${username}/${repo}/contents/${file}`;
+  const url = `https://api.github.com/repos/mayankchavan13/MeckTech-site-admin/contents/${file}`;
 
-  try {
-    const res = await fetch(`https://raw.githubusercontent.com/${username}/${repo}/main/${file}`);
-    const existing = await res.json();
+  const res = await fetch(`https://raw.githubusercontent.com/mayankchavan13/MeckTech-site-admin/main/${file}`);
+  const oldData = await res.json();
+  const updated = [...oldData, {
+    name: userName,
+    email: userEmail,
+    score: userScore
+  }];
+  const content = btoa(JSON.stringify(updated, null, 2));
 
-    const updated = [...existing, {
-      name: userName,
-      email: userEmail,
-      score: userScore
-    }];
-
-    const content = btoa(JSON.stringify(updated, null, 2));
-
-    let sha = "";
-    try {
-      const existingRes = await fetch(url, {
-        headers: {
-          Authorization: `token ${token}`,
-          Accept: "application/vnd.github+json"
-        }
-      });
-      const data = await existingRes.json();
-      sha = data.sha;
-    } catch {}
-
-    await fetch(url, {
-      method: "PUT",
-      headers: {
-        Authorization: `token ${token}`,
-        Accept: "application/vnd.github+json"
-      },
-      body: JSON.stringify({
-        message: "Add paid user",
-        content,
-        sha
-      })
-    });
-  } catch (err) {
-    console.error("Saving paid user failed", err);
-  }
-}
-</script>
-<script>
-async function loadBranding() {
-  try {
-    const res = await fetch("https://raw.githubusercontent.com/mayankchavan13/MeckTech-site-admin/main/branding.json");
-    const data = await res.json();
-    if (data.name) {
-      document.getElementById("brandName").innerText = data.name;
+  let sha = "";
+  const getSHA = await fetch(url, {
+    headers: {
+      Authorization: `token ${token}`,
+      Accept: "application/vnd.github+json"
     }
-    if (data.logo) {
-      const img = document.getElementById("brandLogo");
-      img.src = data.logo;
-      img.style.display = "inline-block";
-    }
-  } catch (e) {
-    console.error("Failed to load branding info:", e);
-  }
+  });
+  const shaRes = await getSHA.json();
+  sha = shaRes.sha;
+
+  await fetch(url, {
+    method: "PUT",
+    headers: {
+      Authorization: `token ${token}`,
+      Accept: "application/vnd.github+json"
+    },
+    body: JSON.stringify({
+      message: "Add paid user",
+      content,
+      sha
+    })
+  });
 }
-loadBranding();
 </script>
 
 </body>
