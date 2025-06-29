@@ -82,6 +82,11 @@
   </style>
 </head>
 <body>
+<div style="text-align:center; margin-top: 20px;">
+  <img id="brandLogo" src="" style="max-height:80px; display:none;" />
+  <h1 id="brandName">Loading...</h1>
+</div>
+
 <div class="container">
   <div id="start-section">
     <h2>Welcome to MeckTech CS/AI-ML Assessment</h2>
@@ -314,5 +319,25 @@ async function savePaidUser() {
   }
 }
 </script>
+<script>
+async function loadBranding() {
+  try {
+    const res = await fetch("https://raw.githubusercontent.com/mayankchavan13/MeckTech-site-admin/main/branding.json");
+    const data = await res.json();
+    if (data.name) {
+      document.getElementById("brandName").innerText = data.name;
+    }
+    if (data.logo) {
+      const img = document.getElementById("brandLogo");
+      img.src = data.logo;
+      img.style.display = "inline-block";
+    }
+  } catch (e) {
+    console.error("Failed to load branding info:", e);
+  }
+}
+loadBranding();
+</script>
+
 </body>
 </html>
