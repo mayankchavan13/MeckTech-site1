@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head><title>Result</title><link rel="stylesheet" href="style.css" /></head>
+<body>
+  <div class="container">
+    <h2>Your Score: <span id="score"></span>/20</h2>
+    <div id="paySection" style="display:none;">
+      <p>🎉 Congratulations! You're eligible for a certificate.</p>
+      <button onclick="startPayment()">Pay ₹149</button>
+    </div>
+    <div id="failSection" style="display:none;">
+      <p>❌ Sorry, you didn't qualify for a certificate.</p>
+    </div>
+  </div>
+  <script>
+    let s = localStorage.getItem("score");
+    document.getElementById("score").innerText = s;
+    if (s >= 15) document.getElementById("paySection").style.display = "block";
+    else document.getElementById("failSection").style.display = "block";
+    function startPayment() {
+      window.location.href = "pay.html";
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Pay ₹149</title>
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+</head>
+<body>
+  <h2>Secure Payment</h2>
+  <button id="rzp-button">Pay ₹149</button>
+  <script>
+    document.getElementById("rzp-button").onclick = function () {
+      var options = {
+        key: "YOUR_RAZORPAY_KEY",
+        amount: 14900,
+        currency: "INR",
+        name: "MeckTech Certificate",
+        handler: function () {
+           
+           let name = localStorage.getItem("name");
+           let email = localStorage.getItem("email");
+           let score = localStorage.getItem("score");
+
+           let paid = JSON.parse(localStorage.getItem("paidUsers")) || [];
+           paid.push({ name, email, score });
+           localStorage.setItem("paidUsers", JSON.stringify(paid));
+
+          window.location.href = "success.html";
+}
+
+        }
+      };
+      new Razorpay(options).open();
+  </script>
+</body>
+</html>

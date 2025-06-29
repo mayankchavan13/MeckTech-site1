@@ -1,0 +1,19 @@
+body {
+    background: #121212;
+    color: white;
+    font-family: Arial;
+  }
+  .container {
+    max-width: 600px;
+    margin: auto;
+    padding: 20px;
+  }
+  .logo {
+    width: 100px;
+  }
+  input, button {
+    padding: 10px;
+    margin: 10px 0;
+    width: 100%;
+  }
+  
