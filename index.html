@@ -164,7 +164,7 @@
           result.innerHTML = `
             <h2>🎉 Congratulations!</h2>
             <p>You scored ${correctCount}/20</p>
-            <p>Pay ₹${price.discount || 149} (Original ₹${price.original || 249}) to get your certificate on email.</p>
+            <p>Pay ₹${price.discount || 149} (<span style="text-decoration: line-through;">₹${price.original || 249}</span>) to get your certificate on email.</p>
             <button onclick="payNow(${price.discount || 149})">Pay Now</button>
           `;
         });
