@@ -9,89 +9,66 @@
   <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
   <style>
     body {
-      margin: 0;
+      background-color: #0d1117;
+      color: #f0f6fc;
       font-family: 'Segoe UI', sans-serif;
-      background: #0f0f0f;
-      color: #f1f1f1;
+      margin: 0;
+      padding: 20px;
     }
-    #container { padding: 20px; max-width: 800px; margin: auto; }
-    .logo { width: 100px; border-radius: 8px; margin-bottom: 10px; }
-    .question { margin-bottom: 20px; }
-    button {
-      padding: 10px 20px;
-      margin-top: 10px;
-      background-color: #1db954;
-      border: none;
-      border-radius: 5px;
-      color: white;
-      cursor: pointer;
-    }
-    .hidden { display: none; }
-    .option {
-      margin: 8px 0;
-      padding: 10px;
-      background: #222;
-      border: 1px solid #444;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-    .center { text-align: center; }
+    h1, h2 { color: #58a6ff; }
     input {
       width: 100%;
       padding: 10px;
-      margin: 8px 0;
-      border-radius: 5px;
-      border: 1px solid #333;
-      background: #181818;
+      margin-bottom: 15px;
+      background: #161b22;
+      border: 1px solid #30363d;
       color: white;
+      border-radius: 5px;
     }
-    ul li { margin: 6px 0; }
-    footer {
-      margin-top: 50px;
-      font-size: 14px;
-      text-align: center;
-      color: #aaa;
+    button {
+      background: #238636;
+      padding: 10px 20px;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
     }
-    a { color: #1db954; text-decoration: none; }
+    .question-box {
+      margin-bottom: 20px;
+      background: #161b22;
+      padding: 15px;
+      border-radius: 10px;
+    }
+    .hide { display: none; }
   </style>
 </head>
 <body>
 
-<div id="container">
   <div id="intro">
-    <img id="logo" class="logo" src="" alt="Logo" />
-    <h1 id="brandName">Welcome to MeckTech Assessment</h1>
+    <div id="branding" style="text-align:center;margin-bottom:20px;"></div>
+    <h1>Welcome to MeckTech CS/Ai-ML Assessment</h1>
     <p><strong>Instructions:</strong></p>
     <ul>
-      <li>Assessment runs in fullscreen. Exiting fullscreen will cancel your test.</li>
-      <li>Answer at least 15 out of 20 correctly to qualify for a certificate.</li>
-      <li>Certificate will be sent via email after ₹<span id="priceText">149</span> payment.</li>
+      <li>You must attempt all 20 questions.</li>
+      <li>If you exit fullscreen, your test will be cancelled.</li>
+      <li>You must answer at least 15 correctly to get a certificate.</li>
     </ul>
     <input type="text" id="fullName" placeholder="Full Name" required />
-    <input type="email" id="email" placeholder="Email Address" required />
+    <input type="email" id="email" placeholder="Email" required />
     <input type="text" id="address" placeholder="Address" required />
     <button onclick="startAssessment()">Start Assessment</button>
   </div>
 
-  <div id="quiz" class="hidden">
-    <h2>Question <span id="qNum">1</span>/20</h2>
-    <div id="qText"></div>
-    <div id="options"></div>
-  </div>
+  <form id="assessment" class="hide">
+    <div id="questionsContainer"></div>
+    <button type="submit">Submit</button>
+  </form>
 
-  <div id="result" class="hidden center">
-    <h2 id="scoreMessage"></h2>
-    <div id="paymentSection" class="hidden">
-      <p>Pay ₹<span id="priceText2">149</span> to get your certificate on email.</p>
-      <button onclick="payNow()">Pay with Razorpay</button>
-      <small><br/><br/>MeckTech doesn't claim any partnership with any other company. This assessment is based on your personal knowledge about CS/Ai-ML course. We hope our certificate helps you in future. All the best.</small>
-    </div>
+  <div id="resultScreen" class="hide">
+    <h2>Congratulations!</h2>
+    <p>You answered <strong id="correctCount"></strong> out of 20 correctly.</p>
+    <div id="paymentSection"></div>
   </div>
-
-  <footer>
-    Need help? Contact us at <a href="mailto:royalmanagement02@gmail.com">royalmanagement02@gmail.com</a>
-  </footer>
-</div>
 
 <script>
   const firebaseConfig = {
@@ -108,121 +85,131 @@
   const db = firebase.database();
 
   let questions = [];
-  let current = 0;
-  let score = 0;
+  let correctAnswers = [];
 
   function startAssessment() {
     const name = document.getElementById("fullName").value;
     const email = document.getElementById("email").value;
     const address = document.getElementById("address").value;
-    if (!name || !email || !address) return alert("All fields are required.");
-
-    document.getElementById("intro").classList.add("hidden");
-    document.getElementById("quiz").classList.remove("hidden");
-
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch(err => {
-        alert("Please allow fullscreen to continue.");
-      });
+    if (!name || !email || !address) {
+      alert("All fields are required.");
+      return;
     }
 
-    document.addEventListener("fullscreenchange", () => {
+    document.documentElement.requestFullscreen().then(() => {
+      document.getElementById("intro").classList.add("hide");
+      document.getElementById("assessment").classList.remove("hide");
+    });
+
+    window.onfullscreenchange = () => {
       if (!document.fullscreenElement) {
         alert("You exited fullscreen. Test is cancelled.");
         location.reload();
       }
-    });
-
-    showQuestion();
+    };
   }
 
-  function showQuestion() {
-    if (current >= questions.length) return finishTest();
-
-    document.getElementById("qNum").innerText = current + 1;
-    document.getElementById("qText").innerText = questions[current].text;
-
-    const opts = questions[current].options;
-    const optDiv = document.getElementById("options");
-    optDiv.innerHTML = "";
-
-    opts.forEach((opt, i) => {
-      const btn = document.createElement("div");
-      btn.className = "option";
-      btn.innerText = opt;
-      btn.onclick = () => {
-        if (i === questions[current].correct) score++;
-        current++;
-        showQuestion();
-      };
-      optDiv.appendChild(btn);
+  function renderQuestions() {
+    const container = document.getElementById("questionsContainer");
+    container.innerHTML = "";
+    questions.slice(0, 20).forEach((q, index) => {
+      const box = document.createElement("div");
+      box.className = "question-box";
+      box.innerHTML = `<p><strong>${index + 1}. ${q.text}</strong></p>`;
+      q.options.forEach((opt, i) => {
+        box.innerHTML += `
+          <label>
+            <input type="radio" name="q${index}" value="${i}" required />
+            ${opt}
+          </label><br/>
+        `;
+      });
+      container.appendChild(box);
     });
   }
 
-  function finishTest() {
+  document.getElementById("assessment").addEventListener("submit", (e) => {
+    e.preventDefault();
+    let score = 0;
+    questions.slice(0, 20).forEach((q, i) => {
+      const selected = document.querySelector(`input[name=q${i}]:checked`);
+      if (selected && parseInt(selected.value) === q.correct) {
+        score++;
+      }
+    });
+
     document.exitFullscreen();
-    document.getElementById("quiz").classList.add("hidden");
-    document.getElementById("result").classList.remove("hidden");
-    const msg = `You scored ${score} out of ${questions.length}`;
-    document.getElementById("scoreMessage").innerText = msg;
+    document.getElementById("assessment").classList.add("hide");
+    document.getElementById("resultScreen").classList.remove("hide");
+    document.getElementById("correctCount").textContent = score;
 
     if (score >= 15) {
-      document.getElementById("paymentSection").classList.remove("hidden");
+      const fullName = document.getElementById("fullName").value;
+      const email = document.getElementById("email").value;
+      renderPayment(fullName, email, score);
     } else {
-      document.getElementById("paymentSection").innerHTML = `<p style="color:red;">❌ You are not eligible for certificate. Minimum 15 required.</p>`;
+      document.getElementById("paymentSection").innerHTML =
+        "<p>You scored below the passing mark. Better luck next time!</p>";
     }
+  });
+
+  function renderPayment(name, email, score) {
+    db.ref("price").once("value", snap => {
+      const data = snap.val();
+      const amt = data?.discount || 149;
+      const original = data?.original || 249;
+      document.getElementById("paymentSection").innerHTML = `
+        <p>Pay ₹<del>${original}</del> <strong>${amt}</strong> to receive your certificate on <strong>${email}</strong>.</p>
+        <button onclick="makePayment('${name}', '${email}', ${score}, ${amt})">Pay Now</button>
+        <p style="font-size:12px;color:gray;margin-top:15px;">
+          MeckTech doesn't claim any partnership with any other company. This assessment is based on your personal knowledge about CS/Ai-ML course. We hope our certificate helps you in future. All the best.
+        </p>
+      `;
+    });
   }
 
-  function payNow() {
-    const name = document.getElementById("fullName").value;
-    const email = document.getElementById("email").value;
-
-    var options = {
-      key: "rzp_live_YourKeyHere", // 🔁 Replace with your Razorpay key
-      amount: document.getElementById("priceText2").innerText * 100,
+  function makePayment(name, email, score, amount) {
+    const options = {
+      key: "rzp_live_YourKeyHere", // Replace this with your real Razorpay key
+      amount: amount * 100,
       currency: "INR",
       name: "MeckTech",
-      description: "Certificate Payment",
+      description: "Certificate Fee",
       handler: function (response) {
         db.ref("paid_users").push({ name, email, score });
-        document.getElementById("paymentSection").innerHTML = `<p>✅ Payment Successful. Certificate will be sent to ${email}.</p>`;
+        alert("Payment successful! Certificate will be emailed to you.");
       },
       prefill: {
-        name: name,
-        email: email
+        name,
+        email
+      },
+      theme: {
+        color: "#121212"
       }
     };
-    var rzp = new Razorpay(options);
+    const rzp = new Razorpay(options);
     rzp.open();
   }
 
-  // Branding
-  db.ref("branding").on("value", (snap) => {
-    const data = snap.val();
-    if (data) {
-      document.getElementById("brandName").innerText = data.name || "Welcome";
-      document.getElementById("logo").src = data.logo || "";
+  // Fetch branding and questions
+  db.ref("branding").on("value", snap => {
+    const b = snap.val();
+    if (b) {
+      document.getElementById("branding").innerHTML = `
+        <img src="${b.logo}" alt="Logo" style="max-height:80px;margin-bottom:10px;" /><br/>
+        <h2>${b.name}</h2>
+      `;
     }
   });
 
-  // Price
-  db.ref("price").on("value", (snap) => {
-    const data = snap.val();
-    if (data && data.price) {
-      document.getElementById("priceText").innerText = data.price;
-      document.getElementById("priceText2").innerText = data.price;
-    }
-  });
-
-  // Questions
-  db.ref("questions").on("value", (snap) => {
+  db.ref("questions").on("value", snap => {
     const data = snap.val();
     if (data) {
       questions = Object.values(data);
-    } else {
-      alert("❌ No questions found.");
+      renderQuestions();
     }
   });
 </script>
+
 </body>
 </html>
