@@ -65,7 +65,7 @@
     <ul>
       <li>Assessment runs in fullscreen. Exiting fullscreen will cancel your test.</li>
       <li>Answer at least 15 out of 20 correctly to qualify for a certificate.</li>
-      <li>Certificate will be sent via email after ₹149 payment.</li>
+      <li>Certificate will be sent via email after ₹<span id="priceText">149</span> payment.</li>
     </ul>
     <input type="text" id="fullName" placeholder="Full Name" required />
     <input type="email" id="email" placeholder="Email Address" required />
@@ -82,7 +82,7 @@
   <div id="result" class="hidden center">
     <h2 id="scoreMessage"></h2>
     <div id="paymentSection" class="hidden">
-      <p>Pay ₹<span id="priceText">149</span> to get your certificate on email.</p>
+      <p>Pay ₹<span id="priceText2">149</span> to get your certificate on email.</p>
       <button onclick="payNow()">Pay with Razorpay</button>
       <small><br/><br/>MeckTech doesn't claim any partnership with any other company. This assessment is based on your personal knowledge about CS/Ai-ML course. We hope our certificate helps you in future. All the best.</small>
     </div>
@@ -94,13 +94,12 @@
 </div>
 
 <script>
-  // Firebase Config
   const firebaseConfig = {
     apiKey: "AIzaSyDg6hedgJB7nK3xVvIrxg04ouFVTkIHe2k",
     authDomain: "mecktech-bbc2e.firebaseapp.com",
     databaseURL: "https://mecktech-bbc2e-default-rtdb.firebaseio.com",
     projectId: "mecktech-bbc2e",
-    storageBucket: "mecktech-bbc2e.firebasestorage.app",
+    storageBucket: "mecktech-bbc2e.appspot.com",
     messagingSenderId: "790927325648",
     appId: "1:790927325648:web:9135f13e7dafba1f0b21d5"
   };
@@ -179,8 +178,8 @@
     const email = document.getElementById("email").value;
 
     var options = {
-      key: "rzp_live_YourKeyHere", // 🟡 Replace with your Razorpay key
-      amount: document.getElementById("priceText").innerText * 100,
+      key: "rzp_live_YourKeyHere", // 🔁 Replace with your Razorpay key
+      amount: document.getElementById("priceText2").innerText * 100,
       currency: "INR",
       name: "MeckTech",
       description: "Certificate Payment",
@@ -197,7 +196,7 @@
     rzp.open();
   }
 
-  // 🟣 Realtime Branding
+  // Branding
   db.ref("branding").on("value", (snap) => {
     const data = snap.val();
     if (data) {
@@ -206,15 +205,16 @@
     }
   });
 
-  // 🟣 Realtime Price
+  // Price
   db.ref("price").on("value", (snap) => {
     const data = snap.val();
     if (data && data.price) {
       document.getElementById("priceText").innerText = data.price;
+      document.getElementById("priceText2").innerText = data.price;
     }
   });
 
-  // 🟣 Realtime Questions
+  // Questions
   db.ref("questions").on("value", (snap) => {
     const data = snap.val();
     if (data) {
