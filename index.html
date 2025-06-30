@@ -8,8 +8,8 @@
     body {
       margin: 0;
       font-family: 'Segoe UI', sans-serif;
-      background-color: #0d0d0d;
-      color: #f1f1f1;
+      background-color: #0e0e0e;
+      color: #fff;
     }
     .centered {
       display: flex;
@@ -17,7 +17,6 @@
       align-items: center;
       justify-content: center;
       min-height: 100vh;
-      text-align: center;
       padding: 20px;
     }
     input, button {
@@ -42,66 +41,67 @@
       margin: 20px 0;
     }
     .option {
-      background: #333;
+      background: #262626;
       margin: 10px 0;
-      padding: 12px;
+      padding: 14px;
       border-radius: 6px;
       text-align: left;
       cursor: pointer;
+      transition: 0.2s;
     }
     .option:hover {
-      background: #555;
+      background: #444;
     }
     #contact {
       margin-top: 20px;
       font-size: 13px;
-      color: #999;
+      color: #aaa;
     }
-    a { color: #00ffe0; text-decoration: none; }
   </style>
 </head>
 <body>
 
-<!-- Welcome/Launch Page -->
+<!-- Launch Page -->
 <div id="launchPage" class="centered">
   <h2>Welcome to MeckTech Assessment</h2>
-  <p><strong>Instructions:</strong></p>
-  <ul style="text-align: left; max-width: 500px;">
-    <li>The test has 20 questions, one at a time.</li>
-    <li>Fullscreen is required. Exiting will cancel your test.</li>
-    <li>Minimum 15 (75%) correct answers are needed for certificate eligibility.</li>
-  </ul>
-  <input type="text" id="fullName" placeholder="Your Full Name" required />
-  <input type="email" id="email" placeholder="Your Email" required />
-  <input type="text" id="address" placeholder="Your Address" required />
+  <p style="max-width:500px; text-align:center;">
+    📌 This is a 20-question assessment.<br/>
+    ✅ You must stay in fullscreen or the test will cancel.<br/>
+    🏆 Minimum 15 correct answers required to get a certificate.<br/>
+    💳 ₹149 payment required to receive certificate via email.
+  </p>
+  <input type="text" id="fullName" placeholder="Full Name" required />
+  <input type="email" id="email" placeholder="Email Address" required />
+  <input type="text" id="address" placeholder="Address" required />
   <button onclick="startTest()">Start Assessment</button>
   <div id="contact">
-    Contact: <a href="mailto:royalmanagement02@gmail.com">royalmanagement02@gmail.com</a>
+    Contact: royalmanagement02@gmail.com
   </div>
 </div>
 
-<!-- Quiz Section -->
+<!-- Quiz Page -->
 <div id="quizContainer" class="centered" style="display:none;">
-  <div class="question-box" id="questionContainer"></div>
+  <div id="questionContainer" class="question-box"></div>
 </div>
 
-<!-- Result Section -->
+<!-- Result Page -->
 <div id="resultPage" class="centered" style="display:none;">
   <h2 id="scoreMsg"></h2>
   <div id="payButton" style="display:none;">
-    <p>Get your verified certificate for <b>₹149</b></p>
+    <p>🎓 Get your certificate for <strong>₹149</strong></p>
     <button onclick="payNow()">Pay Now</button>
   </div>
   <div id="finalMsg"></div>
 </div>
 
-<!-- Firebase & Razorpay Scripts -->
+<!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+<!-- Razorpay -->
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 
 <script>
-  // Firebase Configuration
+  // Firebase Config
   const firebaseConfig = {
     apiKey: "AIzaSyDg6hedgJB7nK3xVvIrxg04ouFVTkIHe2k",
     authDomain: "mecktech-bbc2e.firebaseapp.com",
@@ -123,7 +123,7 @@
     user.email = document.getElementById("email").value.trim();
     user.address = document.getElementById("address").value.trim();
     if (!user.name || !user.email || !user.address) {
-      alert("Please enter all fields");
+      alert("Please enter all details.");
       return;
     }
     document.documentElement.requestFullscreen();
@@ -133,7 +133,7 @@
   }
 
   function loadQuestions() {
-    db.ref("questions").once("value", (snapshot) => {
+    db.ref("questions").once("value", snapshot => {
       const data = snapshot.val();
       questions = data ? Object.values(data) : [];
       current = 0;
@@ -169,13 +169,13 @@
     if (score >= 15) {
       document.getElementById("payButton").style.display = "block";
     } else {
-      document.getElementById("finalMsg").innerText = "Sorry, you are not eligible for the certificate.";
+      document.getElementById("finalMsg").innerText = "❌ Sorry, you are not eligible for the certificate.";
     }
   }
 
   function payNow() {
     const options = {
-      key: "rzp_live_YourKeyHere", // Replace this with your Razorpay LIVE key
+      key: "rzp_live_YourKeyHere", // Replace with your Razorpay live key
       amount: 14900,
       currency: "INR",
       name: "MeckTech",
@@ -188,12 +188,12 @@
         });
         document.getElementById("payButton").style.display = "none";
         document.getElementById("finalMsg").innerHTML = `
-          <h3>Payment Successful!</h3>
-          <p>Your certificate will be sent to your email shortly.</p>
-          <p style="font-size:13px; color:gray;">
+          <h3>✅ Payment Successful</h3>
+          <p>Your certificate will be sent to <strong>${user.email}</strong>.</p>
+          <p style="font-size:13px; color:#aaa;">
             MeckTech doesn't claim any partnership with any other company.<br/>
             This assessment is based on your personal knowledge about CS/AI-ML.<br/>
-            We hope our certificate helps you in future. All the best.
+            We hope our certificate helps you in future. All the best!
           </p>`;
       },
       prefill: {
@@ -204,10 +204,10 @@
     new Razorpay(options).open();
   }
 
-  // Cancel if user exits fullscreen during test
+  // Exit Fullscreen = Cancel test
   document.addEventListener("fullscreenchange", () => {
     if (!document.fullscreenElement && current < questions.length) {
-      alert("Fullscreen exited. Test cancelled.");
+      alert("⚠️ You exited fullscreen. Test cancelled.");
       location.reload();
     }
   });
