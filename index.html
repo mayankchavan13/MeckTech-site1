@@ -3,294 +3,202 @@
 <head>
   <meta charset="UTF-8" />
   <title>MeckTech Assessment</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
   <style>
     body {
       margin: 0;
       font-family: 'Segoe UI', sans-serif;
-      background-color: #121212;
+      background: #121212;
       color: white;
     }
-    .container {
-      max-width: 700px;
-      margin: auto;
-      padding: 2rem;
-    }
-    input, textarea {
-      width: 100%;
-      padding: 0.8rem;
-      margin-top: 0.5rem;
-      border: none;
-      border-radius: 5px;
-      background-color: #1e1e1e;
-      color: white;
-    }
-    button {
-      padding: 0.8rem 2rem;
-      margin-top: 1rem;
-      background-color: #03dac5;
-      color: black;
-      font-weight: bold;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
+    #container { padding: 20px; max-width: 800px; margin: auto; }
+    .logo { width: 100px; border-radius: 6px; margin-bottom: 10px; }
+    .question { margin-bottom: 20px; }
+    button { padding: 10px 20px; margin-top: 10px; cursor: pointer; }
     .hidden { display: none; }
-    .question-box {
-      margin-top: 2rem;
-      background: #1e1e1e;
-      padding: 1rem;
-      border-radius: 8px;
-    }
-    label { display: block; margin-top: 1rem; }
-    .options label { margin: 0.5rem 0; display: block; }
-    #result { font-size: 1.5rem; margin-top: 2rem; }
-    #fullscreen-warning {
-      color: red;
-      margin-top: 1rem;
-      font-weight: bold;
-    }
-    .strike { text-decoration: line-through; color: grey; }
+    .option { margin: 5px 0; }
+    .correct { color: #4caf50; }
+    .wrong { color: #f44336; }
+    .center { text-align: center; }
   </style>
 </head>
 <body>
 
-<!-- Branding -->
-<div style="text-align:center; margin-top: 20px;">
-  <img id="brandLogo" src="" style="max-height:80px; display:none;" />
-  <h1 id="brandName">Loading...</h1>
-</div>
-
-<div class="container">
-  <div id="start-section">
-    <h2>Welcome to MeckTech CS/AI-ML Assessment</h2>
-    <p><b>Instructions:</b></p>
+<div id="container">
+  <div id="intro">
+    <img id="logo" class="logo" src="" />
+    <h1 id="brandName">Welcome to MeckTech Assessment</h1>
+    <p><strong>Instructions:</strong></p>
     <ul>
-      <li>Test will open in <b>fullscreen</b> — do not exit fullscreen.</li>
-      <li>Exiting fullscreen will <b>cancel your test</b> and make you ineligible for certificate.</li>
-      <li>You must answer at least <b>15 out of 20</b> questions correctly to qualify.</li>
-      <li>Certificate will be sent via email <b>only after payment</b>.</li>
+      <li>Assessment will run in fullscreen. Do not exit or it will be cancelled.</li>
+      <li>You must answer at least 15 questions correctly out of 20 to be eligible.</li>
+      <li>Certificate will be issued after successful payment of ₹149.</li>
     </ul>
-    <label>Full Name</label>
-    <input type="text" id="name" required />
-    <label>Email</label>
-    <input type="email" id="email" required />
-    <label>Address</label>
-    <textarea id="address" required></textarea>
-    <button onclick="startTest()">Start Assessment</button>
+    <input type="text" id="fullName" placeholder="Full Name" required /><br />
+    <input type="email" id="email" placeholder="Email Address" required /><br />
+    <input type="text" id="address" placeholder="Address" required /><br />
+    <button onclick="startAssessment()">Start Assessment</button>
   </div>
 
-  <div id="quiz-section" class="hidden">
-    <div id="question-box" class="question-box"></div>
+  <div id="quiz" class="hidden">
+    <h2>Question <span id="qNum">1</span>/20</h2>
+    <div id="qText"></div>
+    <div id="options"></div>
     <button onclick="nextQuestion()">Next</button>
-    <p id="fullscreen-warning" class="hidden">⚠️ You exited fullscreen. Test cancelled.</p>
   </div>
 
-  <div id="result-section" class="hidden">
-    <h2>Test Complete</h2>
-    <div id="result"></div>
-    <div id="payment-section" class="hidden">
-      <p>To receive your certificate, please make payment of:
-        <span class="strike">₹249</span> <b>₹149</b> only.
-      </p>
-      <button onclick="payNow()">Pay & Get Certificate</button>
-    </div>
-    <div id="success-message" class="hidden">
-      <h3>✅ Payment Successful</h3>
-      <p>Your certificate will be sent to your email shortly.</p>
-      <small>MeckTech doesn't claim any partnership with any other company, this assessment is based on your personal knowledge about CS/Ai-ML course. We hope our certificate helps you in future, All the best.</small>
+  <div id="result" class="hidden center">
+    <h2 id="scoreMessage"></h2>
+    <div id="paymentSection" class="hidden">
+      <p>Pay ₹<span id="priceText">149</span> to get your certificate on email.</p>
+      <button onclick="payNow()">Pay with Razorpay</button>
+      <small><br/><br/>MeckTech doesn't claim any partnership with any other company, this assessment is based on your personal knowledge about CS/Ai-ML course. We hope our certificate helps you in future, All the best.</small>
     </div>
   </div>
 </div>
 
 <script>
-let questions = [];
-let currentIndex = 0;
-let correctAnswers = 0;
-let userName = "";
-let userEmail = "";
-let userScore = 0;
-
-async function loadBranding() {
-  try {
-    const res = await fetch("https://raw.githubusercontent.com/mayankchavan13/MeckTech-site-admin/main/branding.json");
-    const data = await res.json();
-    if (data.name) document.getElementById("brandName").innerText = data.name;
-    if (data.logo) {
-      const img = document.getElementById("brandLogo");
-      img.src = data.logo;
-      img.style.display = "inline-block";
-    }
-  } catch (e) {
-    console.error("❌ Branding load failed:", e);
-  }
-}
-loadBranding();
-
-async function loadQuestions() {
-  try {
-    const res = await fetch("https://raw.githubusercontent.com/mayankchavan13/MeckTech-site-admin/main/questions.json");
-    const data = await res.json();
-    questions = shuffle(data).slice(0, 20);
-    showQuestion();
-  } catch (err) {
-    alert("❌ Failed to load questions. Please try again.");
-    console.error(err);
-  }
-}
-
-function shuffle(array) {
-  return array.sort(() => Math.random() - 0.5);
-}
-
-function startTest() {
-  userName = document.getElementById("name").value.trim();
-  userEmail = document.getElementById("email").value.trim();
-  const userAddress = document.getElementById("address").value.trim();
-  if (!userName || !userEmail || !userAddress) {
-    alert("Please fill all required details.");
-    return;
-  }
-  document.getElementById("start-section").classList.add("hidden");
-  document.getElementById("quiz-section").classList.remove("hidden");
-  launchFullscreen(document.documentElement);
-  loadQuestions();
-}
-
-function showQuestion() {
-  if (currentIndex >= questions.length) {
-    endTest();
-    return;
-  }
-  const q = questions[currentIndex];
-  const container = document.getElementById("question-box");
-  container.innerHTML = `
-    <p><b>Q${currentIndex + 1}:</b> ${q.question}</p>
-    <div class="options">
-      ${["A", "B", "C", "D"].map((opt, i) => `
-        <label><input type="radio" name="option" value="${opt}" /> ${opt}: ${q.options[i]}</label>
-      `).join("")}
-    </div>
-  `;
-}
-
-function nextQuestion() {
-  const selected = document.querySelector("input[name='option']:checked");
-  if (!selected) {
-    alert("Please select an option.");
-    return;
-  }
-  if (selected.value === questions[currentIndex].correct) {
-    correctAnswers++;
-  }
-  currentIndex++;
-  showQuestion();
-}
-
-function endTest() {
-  userScore = correctAnswers;
-  exitFullscreen();
-  document.getElementById("quiz-section").classList.add("hidden");
-  document.getElementById("result-section").classList.remove("hidden");
-  document.getElementById("result").innerText = `You got ${correctAnswers} out of 20 correct.`;
-  if (correctAnswers >= 15) {
-    document.getElementById("payment-section").classList.remove("hidden");
-  }
-}
-
-// Fullscreen cancel
-function launchFullscreen(element) {
-  if (element.requestFullscreen) {
-    element.requestFullscreen();
-  } else if (element.webkitRequestFullscreen) {
-    element.webkitRequestFullscreen();
-  } else if (element.msRequestFullscreen) {
-    element.msRequestFullscreen();
-  }
-}
-function exitFullscreen() {
-  if (document.exitFullscreen) {
-    document.exitFullscreen();
-  } else if (document.webkitExitFullscreen) {
-    document.webkitExitFullscreen();
-  }
-}
-document.addEventListener("fullscreenchange", checkFullscreen);
-document.addEventListener("webkitfullscreenchange", checkFullscreen);
-function checkFullscreen() {
-  if (!document.fullscreenElement && !document.webkitFullscreenElement) {
-    document.getElementById("fullscreen-warning").classList.remove("hidden");
-    document.getElementById("quiz-section").classList.add("hidden");
-    questions = [];
-  }
-}
-</script>
-
-<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-<script>
-function payNow() {
-  const options = {
-    key: "rzp_live_YourKeyHere", // 🟠 Replace this
-    amount: 14900,
-    currency: "INR",
-    name: "MeckTech Certificate",
-    description: "CS/AI-ML Certificate",
-    handler: function (response) {
-      document.getElementById("payment-section").classList.add("hidden");
-      document.getElementById("success-message").classList.remove("hidden");
-      savePaidUser();
-    },
-    prefill: {
-      name: userName,
-      email: userEmail
-    },
-    theme: {
-      color: "#03dac5"
-    }
+  // Firebase Config
+  const firebaseConfig = {
+    apiKey: "AIzaSyDg6hedgJB7nK3xVvIrxg04ouFVTkIHe2k",
+    authDomain: "mecktech-bbc2e.firebaseapp.com",
+    databaseURL: "https://mecktech-bbc2e-default-rtdb.firebaseio.com",
+    projectId: "mecktech-bbc2e",
+    storageBucket: "mecktech-bbc2e.firebasestorage.app",
+    messagingSenderId: "790927325648",
+    appId: "1:790927325648:web:9135f13e7dafba1f0b21d5"
   };
-  const rzp = new Razorpay(options);
-  rzp.open();
-}
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
 
-async function savePaidUser() {
-  const token = "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"; // 🟠 Replace this
-  const repo = "mayankchavan13/MeckTech-site-admin";
-  const file = "paid_users.json";
-  const url = `https://api.github.com/repos/mayankchavan13/MeckTech-site-admin/contents/${file}`;
+  let questions = [];
+  let current = 0;
+  let score = 0;
 
-  const res = await fetch(`https://raw.githubusercontent.com/mayankchavan13/MeckTech-site-admin/main/${file}`);
-  const oldData = await res.json();
-  const updated = [...oldData, {
-    name: userName,
-    email: userEmail,
-    score: userScore
-  }];
-  const content = btoa(JSON.stringify(updated, null, 2));
+  function startAssessment() {
+    const name = document.getElementById("fullName").value;
+    const email = document.getElementById("email").value;
+    const address = document.getElementById("address").value;
+    if (!name || !email || !address) return alert("All fields are required.");
 
-  let sha = "";
-  const getSHA = await fetch(url, {
-    headers: {
-      Authorization: `token ${token}`,
-      Accept: "application/vnd.github+json"
+    document.getElementById("intro").classList.add("hidden");
+    document.getElementById("quiz").classList.remove("hidden");
+
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(err => {
+        alert("Please allow fullscreen to continue.");
+      });
+    }
+
+    document.addEventListener("fullscreenchange", () => {
+      if (!document.fullscreenElement) {
+        alert("You exited fullscreen. Test is cancelled.");
+        location.reload();
+      }
+    });
+
+    showQuestion();
+  }
+
+  function showQuestion() {
+    if (current >= questions.length) return finishTest();
+
+    document.getElementById("qNum").innerText = current + 1;
+    document.getElementById("qText").innerText = questions[current].text;
+
+    const opts = questions[current].options;
+    const optDiv = document.getElementById("options");
+    optDiv.innerHTML = "";
+
+    opts.forEach((opt, i) => {
+      const btn = document.createElement("button");
+      btn.innerText = opt;
+      btn.className = "option";
+      btn.onclick = () => {
+        if (i === questions[current].correct) score++;
+        current++;
+        showQuestion();
+      };
+      optDiv.appendChild(btn);
+    });
+  }
+
+  function nextQuestion() {
+    current++;
+    showQuestion();
+  }
+
+  function finishTest() {
+    document.exitFullscreen();
+    document.getElementById("quiz").classList.add("hidden");
+    document.getElementById("result").classList.remove("hidden");
+    const msg = `You scored ${score} out of ${questions.length}`;
+    document.getElementById("scoreMessage").innerText = msg;
+
+    if (score >= 15) {
+      document.getElementById("paymentSection").classList.remove("hidden");
+    } else {
+      document.getElementById("paymentSection").innerHTML = `<p style="color:red;">You are not eligible for certificate. Minimum 15 required.</p>`;
+    }
+  }
+
+  function payNow() {
+    const name = document.getElementById("fullName").value;
+    const email = document.getElementById("email").value;
+
+    var options = {
+      key: "rzp_live_YourKeyHere", // Replace with your Razorpay Key
+      amount: document.getElementById("priceText").innerText * 100,
+      currency: "INR",
+      name: "MeckTech",
+      description: "Certificate Payment",
+      handler: function (response) {
+        // Save to Firebase
+        db.ref("paid_users").push({
+          name: name,
+          email: email,
+          score: score
+        });
+        document.getElementById("paymentSection").innerHTML = `<p>✅ Payment Successful. Certificate will be sent to ${email}.</p>`;
+      },
+      prefill: {
+        name: name,
+        email: email
+      }
+    };
+    var rzp = new Razorpay(options);
+    rzp.open();
+  }
+
+  // Load branding
+  db.ref("branding").once("value", (snap) => {
+    const data = snap.val();
+    if (data) {
+      document.getElementById("brandName").innerText = data.name;
+      document.getElementById("logo").src = data.logo;
     }
   });
-  const shaRes = await getSHA.json();
-  sha = shaRes.sha;
 
-  await fetch(url, {
-    method: "PUT",
-    headers: {
-      Authorization: `token ${token}`,
-      Accept: "application/vnd.github+json"
-    },
-    body: JSON.stringify({
-      message: "Add paid user",
-      content,
-      sha
-    })
+  // Load price
+  db.ref("price").once("value", (snap) => {
+    const data = snap.val();
+    if (data) {
+      document.getElementById("priceText").innerText = data.price || 149;
+    }
   });
-}
-</script>
 
+  // Load questions
+  db.ref("questions").once("value", (snap) => {
+    const data = snap.val();
+    if (data) {
+      questions = Object.values(data);
+    } else {
+      alert("No questions found.");
+    }
+  });
+</script>
 </body>
 </html>
