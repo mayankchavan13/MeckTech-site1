@@ -98,13 +98,6 @@
     let currentIndex = 0;
     let correctCount = 0;
 
-    document.addEventListener("fullscreenchange", () => {
-      if (!document.fullscreenElement) {
-        alert("Exited fullscreen. Test cancelled.");
-        location.reload();
-      }
-    });
-
     function startAssessment() {
       const name = document.getElementById("fullName").value.trim();
       const email = document.getElementById("email").value.trim();
