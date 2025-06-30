@@ -11,35 +11,65 @@
     body {
       margin: 0;
       font-family: 'Segoe UI', sans-serif;
-      background: #121212;
-      color: white;
+      background: #0f0f0f;
+      color: #f1f1f1;
     }
     #container { padding: 20px; max-width: 800px; margin: auto; }
-    .logo { width: 100px; border-radius: 6px; margin-bottom: 10px; }
+    .logo { width: 100px; border-radius: 8px; margin-bottom: 10px; }
     .question { margin-bottom: 20px; }
-    button { padding: 10px 20px; margin-top: 10px; cursor: pointer; }
+    button {
+      padding: 10px 20px;
+      margin-top: 10px;
+      background-color: #1db954;
+      border: none;
+      border-radius: 5px;
+      color: white;
+      cursor: pointer;
+    }
     .hidden { display: none; }
-    .option { margin: 5px 0; }
-    .correct { color: #4caf50; }
-    .wrong { color: #f44336; }
+    .option {
+      margin: 8px 0;
+      padding: 10px;
+      background: #222;
+      border: 1px solid #444;
+      border-radius: 5px;
+      cursor: pointer;
+    }
     .center { text-align: center; }
+    input {
+      width: 100%;
+      padding: 10px;
+      margin: 8px 0;
+      border-radius: 5px;
+      border: 1px solid #333;
+      background: #181818;
+      color: white;
+    }
+    ul li { margin: 6px 0; }
+    footer {
+      margin-top: 50px;
+      font-size: 14px;
+      text-align: center;
+      color: #aaa;
+    }
+    a { color: #1db954; text-decoration: none; }
   </style>
 </head>
 <body>
 
 <div id="container">
   <div id="intro">
-    <img id="logo" class="logo" src="" />
+    <img id="logo" class="logo" src="" alt="Logo" />
     <h1 id="brandName">Welcome to MeckTech Assessment</h1>
     <p><strong>Instructions:</strong></p>
     <ul>
-      <li>Assessment will run in fullscreen. Do not exit or it will be cancelled.</li>
-      <li>You must answer at least 15 questions correctly out of 20 to be eligible.</li>
-      <li>Certificate will be issued after successful payment of ₹149.</li>
+      <li>Assessment runs in fullscreen. Exiting fullscreen will cancel your test.</li>
+      <li>Answer at least 15 out of 20 correctly to qualify for a certificate.</li>
+      <li>Certificate will be sent via email after ₹149 payment.</li>
     </ul>
-    <input type="text" id="fullName" placeholder="Full Name" required /><br />
-    <input type="email" id="email" placeholder="Email Address" required /><br />
-    <input type="text" id="address" placeholder="Address" required /><br />
+    <input type="text" id="fullName" placeholder="Full Name" required />
+    <input type="email" id="email" placeholder="Email Address" required />
+    <input type="text" id="address" placeholder="Address" required />
     <button onclick="startAssessment()">Start Assessment</button>
   </div>
 
@@ -47,7 +77,6 @@
     <h2>Question <span id="qNum">1</span>/20</h2>
     <div id="qText"></div>
     <div id="options"></div>
-    <button onclick="nextQuestion()">Next</button>
   </div>
 
   <div id="result" class="hidden center">
@@ -55,9 +84,13 @@
     <div id="paymentSection" class="hidden">
       <p>Pay ₹<span id="priceText">149</span> to get your certificate on email.</p>
       <button onclick="payNow()">Pay with Razorpay</button>
-      <small><br/><br/>MeckTech doesn't claim any partnership with any other company, this assessment is based on your personal knowledge about CS/Ai-ML course. We hope our certificate helps you in future, All the best.</small>
+      <small><br/><br/>MeckTech doesn't claim any partnership with any other company. This assessment is based on your personal knowledge about CS/Ai-ML course. We hope our certificate helps you in future. All the best.</small>
     </div>
   </div>
+
+  <footer>
+    Need help? Contact us at <a href="mailto:royalmanagement02@gmail.com">royalmanagement02@gmail.com</a>
+  </footer>
 </div>
 
 <script>
@@ -71,6 +104,7 @@
     messagingSenderId: "790927325648",
     appId: "1:790927325648:web:9135f13e7dafba1f0b21d5"
   };
+
   firebase.initializeApp(firebaseConfig);
   const db = firebase.database();
 
@@ -114,9 +148,9 @@
     optDiv.innerHTML = "";
 
     opts.forEach((opt, i) => {
-      const btn = document.createElement("button");
-      btn.innerText = opt;
+      const btn = document.createElement("div");
       btn.className = "option";
+      btn.innerText = opt;
       btn.onclick = () => {
         if (i === questions[current].correct) score++;
         current++;
@@ -124,11 +158,6 @@
       };
       optDiv.appendChild(btn);
     });
-  }
-
-  function nextQuestion() {
-    current++;
-    showQuestion();
   }
 
   function finishTest() {
@@ -141,7 +170,7 @@
     if (score >= 15) {
       document.getElementById("paymentSection").classList.remove("hidden");
     } else {
-      document.getElementById("paymentSection").innerHTML = `<p style="color:red;">You are not eligible for certificate. Minimum 15 required.</p>`;
+      document.getElementById("paymentSection").innerHTML = `<p style="color:red;">❌ You are not eligible for certificate. Minimum 15 required.</p>`;
     }
   }
 
@@ -150,18 +179,13 @@
     const email = document.getElementById("email").value;
 
     var options = {
-      key: "rzp_live_YourKeyHere", // Replace with your Razorpay Key
+      key: "rzp_live_YourKeyHere", // 🟡 Replace with your Razorpay key
       amount: document.getElementById("priceText").innerText * 100,
       currency: "INR",
       name: "MeckTech",
       description: "Certificate Payment",
       handler: function (response) {
-        // Save to Firebase
-        db.ref("paid_users").push({
-          name: name,
-          email: email,
-          score: score
-        });
+        db.ref("paid_users").push({ name, email, score });
         document.getElementById("paymentSection").innerHTML = `<p>✅ Payment Successful. Certificate will be sent to ${email}.</p>`;
       },
       prefill: {
@@ -173,30 +197,30 @@
     rzp.open();
   }
 
-  // Load branding
-  db.ref("branding").once("value", (snap) => {
+  // 🟣 Realtime Branding
+  db.ref("branding").on("value", (snap) => {
     const data = snap.val();
     if (data) {
-      document.getElementById("brandName").innerText = data.name;
-      document.getElementById("logo").src = data.logo;
+      document.getElementById("brandName").innerText = data.name || "Welcome";
+      document.getElementById("logo").src = data.logo || "";
     }
   });
 
-  // Load price
-  db.ref("price").once("value", (snap) => {
+  // 🟣 Realtime Price
+  db.ref("price").on("value", (snap) => {
     const data = snap.val();
-    if (data) {
-      document.getElementById("priceText").innerText = data.price || 149;
+    if (data && data.price) {
+      document.getElementById("priceText").innerText = data.price;
     }
   });
 
-  // Load questions
-  db.ref("questions").once("value", (snap) => {
+  // 🟣 Realtime Questions
+  db.ref("questions").on("value", (snap) => {
     const data = snap.val();
     if (data) {
       questions = Object.values(data);
     } else {
-      alert("No questions found.");
+      alert("❌ No questions found.");
     }
   });
 </script>
