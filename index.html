@@ -1,225 +1,164 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>MeckTech Assessment</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body {
-      background-color: #0e0e0e;
-      color: #fff;
-      font-family: 'Segoe UI', sans-serif;
       margin: 0;
-      padding: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #0f0f0f;
+      color: #fff;
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
-      min-height: 100vh;
     }
 
-    #app {
-      max-width: 600px;
-      width: 100%;
-      background-color: #1c1c1c;
-      padding: 30px;
-      border-radius: 12px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    .logo {
+      margin-top: 20px;
+      height: 80px;
     }
 
-    h1, h2, p {
+    h1, h2 {
+      margin: 10px 0;
       text-align: center;
     }
 
-    .option-group {
+    .question-box {
+      background-color: #1c1c1c;
+      padding: 20px;
+      border-radius: 12px;
+      max-width: 600px;
+      width: 90%;
       margin-top: 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
+      box-shadow: 0 0 15px rgba(0, 255, 255, 0.1);
     }
 
-    label {
+    .question-box h3 {
+      margin-bottom: 15px;
+      font-size: 18px;
+    }
+
+    .option {
       display: flex;
       align-items: center;
-      gap: 10px;
-      background-color: #2a2a2a;
+      background-color: #292929;
       padding: 10px 15px;
+      border-radius: 8px;
+      margin: 8px 0;
+      transition: background 0.3s;
+    }
+
+    .option:hover {
+      background-color: #3c3c3c;
+    }
+
+    .option input {
+      margin-right: 10px;
+    }
+
+    .btn {
+      margin-top: 20px;
+      padding: 10px 25px;
+      font-size: 16px;
+      background-color: #00c6a2;
+      color: #000;
+      border: none;
       border-radius: 6px;
       cursor: pointer;
-      transition: background-color 0.3s;
+      transition: background 0.3s;
     }
 
-    label:hover {
-      background-color: #3a3a3a;
-    }
-
-    input[type="radio"] {
-      transform: scale(1.2);
-    }
-
-    button {
-      margin-top: 25px;
-      padding: 10px 20px;
-      background-color: #00ffae;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      color: #000;
-      font-weight: bold;
-    }
-
-    button:hover {
-      background-color: #00d699;
-    }
-
-    #branding {
-      text-align: center;
-      margin-bottom: 20px;
-    }
-
-    #branding img {
-      max-height: 80px;
-      margin-bottom: 10px;
+    .btn:hover {
+      background-color: #00e6be;
     }
 
     #contact {
-      margin-top: 20px;
+      margin-top: 40px;
       font-size: 14px;
-      text-align: center;
-      color: #aaa;
     }
 
-    .hidden {
-      display: none;
+    #contact a {
+      color: #00e6be;
+      text-decoration: none;
+    }
+
+    #contact a:hover {
+      text-decoration: underline;
     }
   </style>
 </head>
 <body>
-  <div id="app">
-    <div id="branding">
-      <img id="brandLogo" src="" alt="Logo" class="hidden" />
-      <h1 id="brandName">Loading...</h1>
-      <h2>CS/AI-ML Certificate Assessment</h2>
-    </div>
-    <div id="questionContainer">
-      <p id="questionText">Loading questions...</p>
-      <div class="option-group" id="optionsContainer"></div>
-      <button onclick="submitAnswer()">Next</button>
-    </div>
-    <div id="contact">Contact: <a href="mailto:royalmanagement02@gmail.com">royalmanagement02@gmail.com</a></div>
+
+  <!-- Static logo at top (already embedded or loaded via Firebase if applicable) -->
+  <img src="logo.png" class="logo" alt="MeckTech Logo" />
+
+  <h1>MeckTech Technologies</h1>
+  <h2>CS/AI-ML Certificate Assessment</h2>
+
+  <div class="question-box" id="question-container">
+    <h3 id="question-text">Loading question...</h3>
+    <div id="options-container"></div>
+    <button class="btn" onclick="nextQuestion()">Next</button>
   </div>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
+  <div id="contact">
+    Contact: <a href="mailto:royalmanagement02@gmail.com">royalmanagement02@gmail.com</a>
+  </div>
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyDg6hedgJB7nK3xVvIrxg04ouFVTkIHe2k",
-      authDomain: "mecktech-bbc2e.firebaseapp.com",
-      databaseURL: "https://mecktech-bbc2e-default-rtdb.firebaseio.com",
-      projectId: "mecktech-bbc2e",
-      storageBucket: "mecktech-bbc2e.firebasestorage.app",
-      messagingSenderId: "790927325648",
-      appId: "1:790927325648:web:9135f13e7dafba1f0b21d5",
-      measurementId: "G-T89V3EWMXB"
-    };
+  <script>
+    const questions = [
+      {
+        question: "Overfitting occurs when:",
+        options: [
+          "Model is too simple",
+          "Model performs well on training but poorly on test data",
+          "Model generalizes well",
+          "Training data is insufficient"
+        ],
+        correct: 1
+      },
+      {
+        question: "Which language is most used in AI/ML?",
+        options: ["Java", "Python", "C#", "HTML"],
+        correct: 1
+      }
+    ];
 
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-
-    let questions = [];
     let currentIndex = 0;
     let score = 0;
 
-    const brandNameEl = document.getElementById("brandName");
-    const brandLogoEl = document.getElementById("brandLogo");
-    const questionText = document.getElementById("questionText");
-    const optionsContainer = document.getElementById("optionsContainer");
-
-    function loadBranding() {
-      const brandingRef = ref(db, 'branding');
-      onValue(brandingRef, (snapshot) => {
-        const data = snapshot.val();
-        if (data) {
-          brandNameEl.innerText = data.name || 'MeckTech';
-          if (data.logo && data.logo.startsWith('http')) {
-            brandLogoEl.src = data.logo;
-            brandLogoEl.classList.remove("hidden");
-          }
-        }
-      });
-    }
-
-    function loadQuestions() {
-      const questionsRef = ref(db, 'questions');
-      onValue(questionsRef, (snapshot) => {
-        const data = snapshot.val();
-        if (data) {
-          questions = Object.values(data);
-          displayQuestion();
-        } else {
-          questionText.innerText = "No questions found.";
-        }
-      });
-    }
-
-    function displayQuestion() {
-      if (currentIndex >= questions.length) {
-        endTest();
-        return;
-      }
-
+    function loadQuestion() {
       const q = questions[currentIndex];
-      questionText.innerText = `Q${currentIndex + 1}: ${q.question}`;
-      optionsContainer.innerHTML = "";
-
-      q.options.forEach((opt, idx) => {
-        const id = `option-${idx}`;
-        const label = document.createElement("label");
-        label.innerHTML = `
-          <input type="radio" name="option" value="${idx}" id="${id}">
-          ${opt}
-        `;
-        optionsContainer.appendChild(label);
+      document.getElementById("question-text").textContent = `Q${currentIndex + 1}: ${q.question}`;
+      const container = document.getElementById("options-container");
+      container.innerHTML = "";
+      q.options.forEach((opt, i) => {
+        const div = document.createElement("div");
+        div.className = "option";
+        div.innerHTML = `<input type="radio" name="opt" value="${i}" id="opt${i}">
+                         <label for="opt${i}">${opt}</label>`;
+        container.appendChild(div);
       });
     }
 
-    function submitAnswer() {
-      const selected = document.querySelector('input[name="option"]:checked');
-      if (!selected) return alert("Please select an answer");
+    function nextQuestion() {
+      const selected = document.querySelector('input[name="opt"]:checked');
+      if (!selected) return alert("Please select an option.");
+      if (parseInt(selected.value) === questions[currentIndex].correct) score++;
 
-      const q = questions[currentIndex];
-      if (parseInt(selected.value) === q.correctIndex) score++;
       currentIndex++;
-      displayQuestion();
-    }
-
-    function endTest() {
-      document.getElementById("app").innerHTML = `
-        <h1>Test Completed</h1>
-        <p>Your Score: ${score} / ${questions.length}</p>
-        <p>If you scored above 15, you're eligible for certificate.</p>
-      `;
-    }
-
-    function enforceFullscreen() {
-      if (document.documentElement.requestFullscreen) {
-        document.documentElement.requestFullscreen();
+      if (currentIndex < questions.length) {
+        loadQuestion();
+      } else {
+        alert(`Test completed. Your score: ${score}/${questions.length}`);
+        // Redirect or payment logic can go here
       }
     }
 
-    window.onload = () => {
-      loadBranding();
-      loadQuestions();
-      enforceFullscreen();
-    };
-
-    document.addEventListener('fullscreenchange', () => {
-      if (!document.fullscreenElement) {
-        alert("Exiting fullscreen cancels the test!");
-        window.location.reload();
-      }
-    });
+    window.onload = loadQuestion;
   </script>
+
 </body>
 </html>
