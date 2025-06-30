@@ -9,207 +9,238 @@
   <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
   <style>
     body {
-      background-color: #0d1117;
+      background: #0d1117;
       color: #f0f6fc;
-      font-family: 'Segoe UI', sans-serif;
+      font-family: Arial, sans-serif;
       margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 700px;
+      margin: auto;
       padding: 20px;
     }
-    h1, h2 { color: #58a6ff; }
-    input {
+    input, button {
       width: 100%;
       padding: 10px;
-      margin-bottom: 15px;
-      background: #161b22;
-      border: 1px solid #30363d;
-      color: white;
+      margin: 8px 0;
+      border: none;
       border-radius: 5px;
     }
     button {
-      background: #238636;
-      padding: 10px 20px;
+      background-color: #238636;
       color: white;
-      border: none;
-      border-radius: 5px;
       cursor: pointer;
     }
     .question-box {
-      margin-bottom: 20px;
       background: #161b22;
-      padding: 15px;
+      padding: 20px;
       border-radius: 10px;
+      margin-bottom: 20px;
     }
-    .hide { display: none; }
+    .hidden {
+      display: none;
+    }
+    .center {
+      text-align: center;
+    }
+    #brandLogo {
+      height: 60px;
+    }
   </style>
 </head>
 <body>
+  <div class="container" id="loginSection">
+    <div class="center">
+      <img id="brandLogo" src="" alt="Logo" />
+      <h1 id="brandName">MeckTech Assessment</h1>
+    </div>
+    <input type="text" id="fullName" placeholder="Enter your Full Name" required />
+    <input type="email" id="email" placeholder="Enter your Email ID" required />
+    <input type="text" id="address" placeholder="Enter your Address" required />
+    <button onclick="startInstructions()">Start Assessment</button>
+  </div>
 
-  <div id="intro">
-    <div id="branding" style="text-align:center;margin-bottom:20px;"></div>
-    <h1>Welcome to MeckTech CS/Ai-ML Assessment</h1>
-    <p><strong>Instructions:</strong></p>
+  <div class="container hidden" id="instructionSection">
+    <h2>Instructions</h2>
     <ul>
-      <li>You must attempt all 20 questions.</li>
-      <li>If you exit fullscreen, your test will be cancelled.</li>
-      <li>You must answer at least 15 correctly to get a certificate.</li>
+      <li>This assessment has 20 questions.</li>
+      <li>You must stay in fullscreen mode, or your test will be cancelled.</li>
+      <li>You must score at least 15 correct answers to be eligible for a certificate.</li>
+      <li>Do not reload or switch tabs during the test.</li>
     </ul>
-    <input type="text" id="fullName" placeholder="Full Name" required />
-    <input type="email" id="email" placeholder="Email" required />
-    <input type="text" id="address" placeholder="Address" required />
-    <button onclick="startAssessment()">Start Assessment</button>
+    <button onclick="startAssessment()">Begin Test</button>
   </div>
 
-  <form id="assessment" class="hide">
-    <div id="questionsContainer"></div>
-    <button type="submit">Submit</button>
-  </form>
+  <div class="container hidden" id="assessmentSection"></div>
 
-  <div id="resultScreen" class="hide">
-    <h2>Congratulations!</h2>
-    <p>You answered <strong id="correctCount"></strong> out of 20 correctly.</p>
-    <div id="paymentSection"></div>
+  <div class="container hidden" id="resultSection">
+    <h2>🎉 Congratulations!</h2>
+    <p>You scored <strong><span id="scoreDisplay"></span>/20</strong></p>
+    <p>Pay ₹<span id="finalPrice">149</span> to receive your certificate by email.</p>
+    <button onclick="makePayment()">Pay & Get Certificate</button>
   </div>
 
-<script>
-  const firebaseConfig = {
-    apiKey: "AIzaSyDg6hedgJB7nK3xVvIrxg04ouFVTkIHe2k",
-    authDomain: "mecktech-bbc2e.firebaseapp.com",
-    databaseURL: "https://mecktech-bbc2e-default-rtdb.firebaseio.com",
-    projectId: "mecktech-bbc2e",
-    storageBucket: "mecktech-bbc2e.appspot.com",
-    messagingSenderId: "790927325648",
-    appId: "1:790927325648:web:9135f13e7dafba1f0b21d5"
-  };
+  <div class="container hidden" id="cancelledSection">
+    <h2>❌ Test Cancelled</h2>
+    <p>You exited fullscreen or reloaded the page.</p>
+    <p>Please try again and follow the instructions carefully.</p>
+  </div>
 
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.database();
+  <div class="container hidden" id="paymentSuccess">
+    <h2>✅ Payment Successful!</h2>
+    <p>Your certificate will be sent to your email.</p>
+    <p><small>
+      MeckTech doesn't claim any partnership with any other company. This assessment is based on your personal knowledge about CS/Ai-ML course. We hope our certificate helps you in future. All the best.
+    </small></p>
+  </div>
 
-  let questions = [];
-  let correctAnswers = [];
-
-  function startAssessment() {
-    const name = document.getElementById("fullName").value;
-    const email = document.getElementById("email").value;
-    const address = document.getElementById("address").value;
-    if (!name || !email || !address) {
-      alert("All fields are required.");
-      return;
-    }
-
-    document.documentElement.requestFullscreen().then(() => {
-      document.getElementById("intro").classList.add("hide");
-      document.getElementById("assessment").classList.remove("hide");
-    });
-
-    window.onfullscreenchange = () => {
-      if (!document.fullscreenElement) {
-        alert("You exited fullscreen. Test is cancelled.");
-        location.reload();
-      }
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDg6hedgJB7nK3xVvIrxg04ouFVTkIHe2k",
+      authDomain: "mecktech-bbc2e.firebaseapp.com",
+      databaseURL: "https://mecktech-bbc2e-default-rtdb.firebaseio.com",
+      projectId: "mecktech-bbc2e",
+      storageBucket: "mecktech-bbc2e.appspot.com",
+      messagingSenderId: "790927325648",
+      appId: "1:790927325648:web:9135f13e7dafba1f0b21d5"
     };
-  }
 
-  function renderQuestions() {
-    const container = document.getElementById("questionsContainer");
-    container.innerHTML = "";
-    questions.slice(0, 20).forEach((q, index) => {
-      const box = document.createElement("div");
-      box.className = "question-box";
-      box.innerHTML = `<p><strong>${index + 1}. ${q.text}</strong></p>`;
-      q.options.forEach((opt, i) => {
-        box.innerHTML += `
-          <label>
-            <input type="radio" name="q${index}" value="${i}" required />
-            ${opt}
-          </label><br/>
-        `;
-      });
-      container.appendChild(box);
-    });
-  }
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
 
-  document.getElementById("assessment").addEventListener("submit", (e) => {
-    e.preventDefault();
-    let score = 0;
-    questions.slice(0, 20).forEach((q, i) => {
-      const selected = document.querySelector(`input[name=q${i}]:checked`);
-      if (selected && parseInt(selected.value) === q.correct) {
-        score++;
+    let user = {};
+    let questions = [];
+    let currentQ = 0;
+    let correct = 0;
+    let discountPrice = 149;
+
+    db.ref("branding").once("value", snap => {
+      const b = snap.val();
+      if (b) {
+        document.getElementById("brandLogo").src = b.logo;
+        document.getElementById("brandName").innerText = b.name;
       }
     });
 
-    document.exitFullscreen();
-    document.getElementById("assessment").classList.add("hide");
-    document.getElementById("resultScreen").classList.remove("hide");
-    document.getElementById("correctCount").textContent = score;
-
-    if (score >= 15) {
-      const fullName = document.getElementById("fullName").value;
-      const email = document.getElementById("email").value;
-      renderPayment(fullName, email, score);
-    } else {
-      document.getElementById("paymentSection").innerHTML =
-        "<p>You scored below the passing mark. Better luck next time!</p>";
-    }
-  });
-
-  function renderPayment(name, email, score) {
     db.ref("price").once("value", snap => {
-      const data = snap.val();
-      const amt = data?.discount || 149;
-      const original = data?.original || 249;
-      document.getElementById("paymentSection").innerHTML = `
-        <p>Pay ₹<del>${original}</del> <strong>${amt}</strong> to receive your certificate on <strong>${email}</strong>.</p>
-        <button onclick="makePayment('${name}', '${email}', ${score}, ${amt})">Pay Now</button>
-        <p style="font-size:12px;color:gray;margin-top:15px;">
-          MeckTech doesn't claim any partnership with any other company. This assessment is based on your personal knowledge about CS/Ai-ML course. We hope our certificate helps you in future. All the best.
-        </p>
-      `;
-    });
-  }
-
-  function makePayment(name, email, score, amount) {
-    const options = {
-      key: "rzp_live_YourKeyHere", // Replace this with your real Razorpay key
-      amount: amount * 100,
-      currency: "INR",
-      name: "MeckTech",
-      description: "Certificate Fee",
-      handler: function (response) {
-        db.ref("paid_users").push({ name, email, score });
-        alert("Payment successful! Certificate will be emailed to you.");
-      },
-      prefill: {
-        name,
-        email
-      },
-      theme: {
-        color: "#121212"
+      const p = snap.val();
+      if (p) {
+        discountPrice = p.discount;
+        document.getElementById("finalPrice").innerText = discountPrice;
       }
-    };
-    const rzp = new Razorpay(options);
-    rzp.open();
-  }
+    });
 
-  // Fetch branding and questions
-  db.ref("branding").on("value", snap => {
-    const b = snap.val();
-    if (b) {
-      document.getElementById("branding").innerHTML = `
-        <img src="${b.logo}" alt="Logo" style="max-height:80px;margin-bottom:10px;" /><br/>
-        <h2>${b.name}</h2>
+    db.ref("questions").once("value", snap => {
+      const qData = snap.val();
+      if (qData) {
+        questions = Object.values(qData);
+      }
+    });
+
+    function startInstructions() {
+      user.name = document.getElementById("fullName").value.trim();
+      user.email = document.getElementById("email").value.trim();
+      user.address = document.getElementById("address").value.trim();
+
+      if (!user.name || !user.email || !user.address) {
+        alert("All fields are required.");
+        return;
+      }
+
+      document.getElementById("loginSection").classList.add("hidden");
+      document.getElementById("instructionSection").classList.remove("hidden");
+    }
+
+    function startAssessment() {
+      document.getElementById("instructionSection").classList.add("hidden");
+      document.getElementById("assessmentSection").classList.remove("hidden");
+      openFullscreen();
+      window.addEventListener("fullscreenchange", checkFullscreen);
+      renderQuestion();
+    }
+
+    function renderQuestion() {
+      if (currentQ >= 20 || currentQ >= questions.length) return finishTest();
+
+      const q = questions[currentQ];
+      const container = document.getElementById("assessmentSection");
+      container.innerHTML = `
+        <div class="question-box">
+          <h3>Q${currentQ + 1}: ${q.text}</h3>
+          ${q.options.map((opt, i) => `
+            <p><button onclick="selectAnswer(${i})">${opt}</button></p>
+          `).join("")}
+        </div>
       `;
     }
-  });
 
-  db.ref("questions").on("value", snap => {
-    const data = snap.val();
-    if (data) {
-      questions = Object.values(data);
-      renderQuestions();
+    function selectAnswer(choice) {
+      if (questions[currentQ].correct == choice) correct++;
+      currentQ++;
+      renderQuestion();
     }
-  });
-</script>
 
+    function finishTest() {
+      closeFullscreen();
+      document.getElementById("assessmentSection").classList.add("hidden");
+
+      if (correct >= 15) {
+        document.getElementById("scoreDisplay").innerText = correct;
+        document.getElementById("resultSection").classList.remove("hidden");
+      } else {
+        document.getElementById("cancelledSection").classList.remove("hidden");
+      }
+    }
+
+    function openFullscreen() {
+      const docElm = document.documentElement;
+      if (docElm.requestFullscreen) docElm.requestFullscreen();
+      else if (docElm.mozRequestFullScreen) docElm.mozRequestFullScreen();
+      else if (docElm.webkitRequestFullscreen) docElm.webkitRequestFullscreen();
+      else if (docElm.msRequestFullscreen) docElm.msRequestFullscreen();
+    }
+
+    function closeFullscreen() {
+      if (document.exitFullscreen) document.exitFullscreen();
+      else if (document.mozCancelFullScreen) document.mozCancelFullScreen();
+      else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+      else if (document.msExitFullscreen) document.msExitFullscreen();
+    }
+
+    function checkFullscreen() {
+      if (!document.fullscreenElement) {
+        document.body.innerHTML = document.getElementById("cancelledSection").outerHTML;
+      }
+    }
+
+    function makePayment() {
+      const options = {
+        key: "rzp_live_YourKeyHere", // 🔁 Replace with your live Razorpay key
+        amount: discountPrice * 100,
+        currency: "INR",
+        name: "MeckTech Assessment",
+        description: "Certificate Payment",
+        handler: function () {
+          db.ref("paid_users").push({
+            name: user.name,
+            email: user.email,
+            score: correct
+          });
+          document.getElementById("resultSection").classList.add("hidden");
+          document.getElementById("paymentSuccess").classList.remove("hidden");
+        },
+        prefill: {
+          name: user.name,
+          email: user.email
+        },
+        theme: {
+          color: "#0d1117"
+        }
+      };
+      const rzp = new Razorpay(options);
+      rzp.open();
+    }
+  </script>
 </body>
 </html>
