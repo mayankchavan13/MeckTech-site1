@@ -2,62 +2,21 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>MeckTech CS/AIML Assessment</title>
+  <title>MeckTech Assessment</title>
   <style>
-    body {
-      background: #0f0f0f;
-      color: #fff;
-      font-family: 'Segoe UI', sans-serif;
-      text-align: center;
-      padding: 30px 20px;
-    }
-    .logo {
-      max-width: 120px;
-      margin-bottom: 20px;
-    }
-    input[type="text"], input[type="email"] {
-      padding: 12px;
-      width: 260px;
-      font-size: 16px;
-      margin: 8px;
-      border-radius: 6px;
-      border: none;
-    }
-    button, .button {
-      background-color: #28a745;
-      color: white;
-      padding: 10px 20px;
-      font-size: 16px;
-      text-decoration: none;
-      border: none;
-      cursor: pointer;
-      margin-top: 10px;
-      border-radius: 6px;
-    }
-    .question-box {
-      background: #1c1c1c;
-      padding: 25px;
-      border-radius: 10px;
-      max-width: 600px;
-      margin: 20px auto;
-    }
-    .option-row {
-      text-align: left;
-      margin: 10px auto;
-      max-width: 500px;
-      background: #2a2a2a;
-      padding: 10px;
-      border-radius: 5px;
-    }
-    .option-row input {
-      margin-right: 10px;
-    }
+    body { background: #0f0f0f; color: #fff; font-family: 'Segoe UI', sans-serif; text-align: center; padding: 30px 20px; }
+    .logo { max-width: 120px; margin-bottom: 20px; }
+    input[type="text"], input[type="email"] { padding: 12px; width: 260px; font-size: 16px; margin: 8px; border-radius: 6px; border: none; }
+    button, .button { background-color: #28a745; color: white; padding: 10px 20px; font-size: 16px; border: none; cursor: pointer; margin-top: 10px; border-radius: 6px; }
+    .question-box { background: #1c1c1c; padding: 25px; border-radius: 10px; max-width: 600px; margin: 20px auto; }
+    .option-row { text-align: left; margin: 10px auto; max-width: 500px; background: #2a2a2a; padding: 10px; border-radius: 5px; }
+    .option-row input { margin-right: 10px; }
   </style>
 </head>
 <body>
 
-  <img src="mecktech-logo.png" alt="MeckTech Logo" class="logo" />
-  <h1>MeckTech CS/AIML Assessment</h1>
+  <img src="mecktech-logo.png" class="logo" alt="MeckTech Logo" />
+  <h1>MeckTech Assessment</h1>
 
   <div id="startForm">
     <input type="text" id="fullName" placeholder="Full Name"><br>
@@ -67,10 +26,16 @@
 
   <div id="quiz" style="display:none;"></div>
   <div id="result" style="display:none;"></div>
+  <div id="thankyou" style="display:none;">
+    <h2>🎉 Thank You!</h2>
+    <p>Your certificate will be emailed to you within 1–2 working days.</p>
+  </div>
 
   <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+  <!-- Razorpay Checkout -->
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 
   <script>
     // Firebase Config
@@ -86,10 +51,7 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    let userData = {};
-    let questions = [];
-    let currentIndex = 0;
-    let correctCount = 0;
+    let userData = {}, questions = [], currentIndex = 0, correctCount = 0;
 
     function startAssessment() {
       const name = document.getElementById("fullName").value.trim();
@@ -106,8 +68,7 @@
         const data = snap.val();
         if (!data) return alert("No questions found in database.");
         questions = Object.values(data);
-        currentIndex = 0;
-        correctCount = 0;
+        currentIndex = 0; correctCount = 0;
         showQuestion();
       });
     }
@@ -120,21 +81,16 @@
           <h3>Q${currentIndex + 1}: ${q.text}</h3>
           ${q.options.map((opt, i) => `
             <div class="option-row">
-              <label>
-                <input type="radio" name="option" value="${i}"> ${opt}
-              </label>
-            </div>
-          `).join('')}
+              <label><input type="radio" name="option" value="${i}">${opt}</label>
+            </div>`).join('')}
           <br><button onclick="submitAnswer()">Next</button>
-        </div>
-      `;
+        </div>`;
     }
 
     function submitAnswer() {
-      const selected = document.querySelector("input[name='option']:checked");
-      if (!selected) return alert("Please select an option.");
-      const ans = parseInt(selected.value);
-      if (ans === parseInt(questions[currentIndex].correct)) correctCount++;
+      const sel = document.querySelector("input[name='option']:checked");
+      if (!sel) return alert("Please select an option.");
+      if (parseInt(sel.value) === parseInt(questions[currentIndex].correct)) correctCount++;
       currentIndex++;
       if (currentIndex >= questions.length) endQuiz();
       else showQuestion();
@@ -142,27 +98,37 @@
 
     function endQuiz() {
       document.getElementById("quiz").style.display = "none";
+      // Save result
+      const key = db.ref("users").push().key;
+      db.ref("users/" + key).set({ ...userData, score: correctCount });
 
-      // Save to Firebase
-      const userId = db.ref("users").push().key;
-      db.ref("users/" + userId).set({
-        ...userData,
-        score: correctCount
-      });
-
-      const formLink = `https://docs.google.com/forms/d/e/1FAIpQLSfSKc44R0lQJls0Fok1ygRfsZfCLH_nj7OFfwZlaiS9tH-gow/viewform?usp=pp_url&entry.525457949=${encodeURIComponent(userData.name)}&entry.758965619=${encodeURIComponent(userData.email)}&entry.1611728617=${correctCount}`;
-
-      const result = document.getElementById("result");
-      result.innerHTML = `
+      document.getElementById("result").innerHTML = `
         <h2>Your Score: ${correctCount}/${questions.length}</h2>
-        <p>To get your certificate, please pay ₹149.</p>
-        <a class="button" href="https://rzp.io/rzp/tL447OSh" target="_blank"
-          onclick="setTimeout(() => window.open('${formLink}', '_blank'), 3000)">
-          Pay ₹149
-        </a>
-        <p style="font-size: 14px; margin-top: 15px;">After payment, your certificate form will open automatically. Submit it to receive your certificate within 1–2 working days.</p>
+        <p>To get your certificate, please complete payment below:</p>
+        <button onclick="payWithRazorpay()">Pay ₹149</button>
       `;
-      result.style.display = "block";
+      document.getElementById("result").style.display = "block";
+    }
+
+    function payWithRazorpay() {
+      const options = {
+        key: "YOUR_RAZORPAY_KEY_ID",             // ← replace with your Key ID
+        amount: 14900,                           // ₹149 in paise
+        currency: "INR",
+        name: "MeckTech Certificate",
+        description: "Payment for Assessment Certificate",
+        handler: function (response) {
+          // payment successful
+          document.getElementById("result").style.display = "none";
+          document.getElementById("thankyou").style.display = "block";
+        },
+        prefill: {
+          name: userData.name,
+          email: userData.email
+        }
+      };
+      const rzp = new Razorpay(options);
+      rzp.open();
     }
   </script>
 </body>
