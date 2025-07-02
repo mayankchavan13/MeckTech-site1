@@ -1,27 +1,27 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8" />
   <title>MeckTech Assessment</title>
   <style>
     body {
-      background-color: #0f0f0f;
+      background: #0f0f0f;
       color: #fff;
       font-family: 'Segoe UI', sans-serif;
       text-align: center;
-      margin: 0;
-      padding: 40px 20px;
+      padding: 30px 20px;
     }
     .logo {
       max-width: 120px;
-      margin-bottom: 10px;
+      margin-bottom: 20px;
     }
     input[type="text"], input[type="email"] {
       padding: 12px;
-      width: 280px;
-      margin: 10px;
+      width: 260px;
       font-size: 16px;
-      border: none;
+      margin: 8px;
       border-radius: 6px;
+      border: none;
     }
     button, .button {
       background-color: #28a745;
@@ -31,11 +31,11 @@
       text-decoration: none;
       border: none;
       cursor: pointer;
-      margin: 10px;
+      margin-top: 10px;
       border-radius: 6px;
     }
     .question-box {
-      background: #1a1a1a;
+      background: #1c1c1c;
       padding: 25px;
       border-radius: 10px;
       max-width: 600px;
@@ -55,6 +55,7 @@
   </style>
 </head>
 <body>
+
   <img src="mecktech-logo.png" alt="MeckTech Logo" class="logo" />
   <h1>MeckTech Assessment</h1>
 
@@ -103,6 +104,7 @@
     function loadQuestions() {
       db.ref("questions").once("value", snap => {
         const data = snap.val();
+        if (!data) return alert("No questions found in database.");
         questions = Object.values(data);
         currentIndex = 0;
         correctCount = 0;
@@ -119,10 +121,10 @@
           ${q.options.map((opt, i) => `
             <div class="option-row">
               <label>
-                <input type="radio" name="option" value="${i}">
-                ${opt}
+                <input type="radio" name="option" value="${i}"> ${opt}
               </label>
-            </div>`).join('')}
+            </div>
+          `).join('')}
           <br><button onclick="submitAnswer()">Next</button>
         </div>
       `;
@@ -130,7 +132,7 @@
 
     function submitAnswer() {
       const selected = document.querySelector("input[name='option']:checked");
-      if (!selected) return alert("Please select an answer.");
+      if (!selected) return alert("Please select an option.");
       const ans = parseInt(selected.value);
       if (ans === parseInt(questions[currentIndex].correct)) correctCount++;
       currentIndex++;
@@ -139,29 +141,26 @@
     }
 
     function endQuiz() {
-      result.innerHTML = `
-  <h2>Result: ${correctCount}/${questions.length}</h2>
-  <p>To receive your certificate, please complete the payment below:</p>
-  <a class="button" href="https://razorpay.me/@mecktech?amount=14900&currency=INR" target="_blank" onclick="setTimeout(() => window.open('${formURL}', '_blank'), 3000)">Pay ₹149</a>
-  <p style="margin-top:20px; font-size:14px;">After successful payment, your certificate form will automatically open.<br>Submit it to receive certificate in 1–2 working days.</p>
-`;
+      document.getElementById("quiz").style.display = "none";
 
-
-      // Save result to Firebase
+      // Save to Firebase
       const userId = db.ref("users").push().key;
       db.ref("users/" + userId).set({
         ...userData,
         score: correctCount
       });
 
-      // Pre-filled Google Form
-      const formURL = `https://docs.google.com/forms/d/e/1FAIpQLSfSKc44R0lQJls0Fok1ygRfsZfCLH_nj7OFfwZlaiS9tH-gow/viewform?usp=pp_url&entry.525457949=${encodeURIComponent(userData.name)}&entry.758965619=${encodeURIComponent(userData.email)}&entry.1611728617=${correctCount}`;
+      const formLink = `https://docs.google.com/forms/d/e/1FAIpQLSfSKc44R0lQJls0Fok1ygRfsZfCLH_nj7OFfwZlaiS9tH-gow/viewform?usp=pp_url&entry.525457949=${encodeURIComponent(userData.name)}&entry.758965619=${encodeURIComponent(userData.email)}&entry.1611728617=${correctCount}`;
 
+      const result = document.getElementById("result");
       result.innerHTML = `
-        <h2>Result: ${correctCount}/${questions.length}</h2>
-        <p>To receive your certificate, please complete the payment below:</p>
-        <a class="button" href="https://razorpay.me/@mecktech?amount=14900&currency=INR" target="_blank" onclick="setTimeout(() => window.open('${formURL}', '_blank'), 3000)">Pay ₹149</a>
-        <p style="margin-top:20px; font-size:14px;">After successful payment, your certificate form will automatically open.<br>Submit it to receive certificate in 1–2 working days.</p>
+        <h2>Your Score: ${correctCount}/${questions.length}</h2>
+        <p>To get your certificate, please pay ₹149.</p>
+        <a class="button" href="https://razorpay.me/@mecktech?amount=14900&currency=INR" target="_blank"
+          onclick="setTimeout(() => window.open('${formLink}', '_blank'), 3000)">
+          Pay ₹149
+        </a>
+        <p style="font-size: 14px; margin-top: 15px;">After payment, your certificate form will open automatically. Submit it to receive your certificate within 1–2 working days.</p>
       `;
       result.style.display = "block";
     }
