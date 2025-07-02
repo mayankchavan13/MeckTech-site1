@@ -99,14 +99,14 @@
       const q = questions[currentIndex];
       const quiz = document.getElementById("quiz");
       quiz.innerHTML = `
-        <div class="question">
+        <div class="question-box">
           <h3>Q${currentIndex + 1}: ${q.text}</h3>
           ${q.options.map((opt, i) => `
-            <div class="option">
+            <div class="option-row">
               <span>${opt}</span>
-              <input type="radio" name="option" value="${i}">
+              <input type="radio" name="option" value="${i}" />
             </div>
-          `).join("")}
+          `).join('')}
           <button onclick="submitAnswer()">Next</button>
         </div>`;
     }
