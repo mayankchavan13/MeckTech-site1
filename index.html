@@ -99,8 +99,10 @@
     function loadQuestions() {
       db.ref("questions").once("value", snapshot => {
         const data = snapshot.val();
-        if (!data) return alert("No questions available.");
+        if (!data) return alert("No questions found.");
         questions = Object.values(data);
+        currentIndex = 0;
+        correctCount = 0;
         showQuestion();
       });
     }
@@ -135,39 +137,38 @@
       document.getElementById("quiz").classList.add("hidden");
       const result = document.getElementById("result");
       result.classList.remove("hidden");
-      const passed = correctCount >= 2;
-      
-      // Save result
+
+      // Save user result to Firebase first
       db.ref("paidUsers").push({
         name: userData.name,
         email: userData.email,
         score: correctCount
       });
 
+      // Show result with payment option only
       result.innerHTML = `
         <h2>MeckTech Assessment</h2>
         <p>Result: ${correctCount}/${questions.length}</p>
-        ${passed ? `
-          <p>To receive your certificate, please complete the payment below:</p>
-          <button onclick="window.open('https://razorpay.me/@mecktech', '_blank')">Pay ₹149</button>
-          <br/><br/>
-          <button onclick="openForm()">I've Paid — Fill Certificate Form</button>
-        ` : `
-          <p>❌ You are not eligible for a certificate.</p>
-        `}
+        <p>To receive your certificate, please complete the payment:</p>
+        <button onclick="handlePayment()">Pay ₹149</button>
       `;
     }
 
-    function openForm() {
-      const url = "https://docs.google.com/forms/d/e/1FAIpQLSfSKc44R0lQJls0Fok1ygRfsZfCLH_nj7OFfwZlaiS9tH-gow/viewform?usp=pp_url" +
-        `&entry.525457949=${encodeURIComponent(userData.name)}` +
-        `&entry.758965619=${encodeURIComponent(userData.email)}` +
-        `&entry.1611728617=${correctCount}`;
-      window.open(url, "_blank");
+    function handlePayment() {
+      // Open Razorpay.me payment page
+      window.open("https://razorpay.me/@mecktech", "_blank");
+
+      // After short delay, open Google Form auto-filled
       setTimeout(() => {
+        const formURL = "https://docs.google.com/forms/d/e/1FAIpQLSfSKc44R0lQJls0Fok1ygRfsZfCLH_nj7OFfwZlaiS9tH-gow/viewform?usp=pp_url" +
+          `&entry.525457949=${encodeURIComponent(userData.name)}` +
+          `&entry.758965619=${encodeURIComponent(userData.email)}` +
+          `&entry.1611728617=${correctCount}`;
+        window.open(formURL, "_blank");
+
         document.getElementById("result").classList.add("hidden");
         document.getElementById("thankyou").classList.remove("hidden");
-      }, 500);
+      }, 4000); // 4 seconds delay for payment
     }
   </script>
 </body>
