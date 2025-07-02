@@ -1,74 +1,61 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
   <title>MeckTech Assessment</title>
   <style>
     body {
-      background: #0f0f0f;
-      color: #fff;
+      background-color: #0f0f0f;
       font-family: Arial, sans-serif;
+      color: #fff;
       text-align: center;
-      padding: 20px;
+      padding: 30px;
     }
     .logo {
-      width: 100px;
-      margin-bottom: 20px;
+      max-width: 120px;
+      margin-bottom: 10px;
     }
-    .input-field {
+    input {
       padding: 10px;
       margin: 10px;
-      font-size: 16px;
-      border-radius: 5px;
-      border: none;
       width: 250px;
-    }
-    button {
-      padding: 10px 20px;
-      margin: 10px;
       font-size: 16px;
+    }
+    button, a.button {
       background-color: #28a745;
       color: white;
+      padding: 10px 20px;
+      font-size: 16px;
+      text-decoration: none;
       border: none;
-      border-radius: 5px;
       cursor: pointer;
+      margin: 10px;
+      border-radius: 5px;
     }
     .question-box {
-      background-color: #1c1c1c;
-      padding: 20px;
-      border-radius: 10px;
-      display: inline-block;
-      text-align: left;
-    }
-    .question-box label {
-      margin-left: 10px;
-    }
-    .hidden {
-      display: none;
+      margin-top: 30px;
     }
   </style>
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 </head>
 <body>
+  <img src="mecktech-logo.png" alt="MeckTech Logo" class="logo" />
+  <h1>MeckTech Assessment</h1>
 
-  <img src="mecktech-logo.png" class="logo" />
-  <h1 id="brandTitle">MeckTech Assessment</h1>
-
-  <!-- Start Form -->
   <div id="startForm">
-    <input class="input-field" type="text" id="fullName" placeholder="Full Name" />
-    <input class="input-field" type="email" id="email" placeholder="Email" />
+    <input type="text" id="fullName" placeholder="Full Name" /><br>
+    <input type="email" id="email" placeholder="Email" /><br>
     <button onclick="startAssessment()">Start Assessment</button>
   </div>
 
-  <!-- Quiz Area -->
-  <div id="quiz" class="hidden"></div>
+  <div id="quiz" style="display:none;"></div>
 
-  <!-- Result Area -->
-  <div id="result" class="hidden"></div>
+  <div id="result" style="display:none;"></div>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
   <script>
+    // Firebase Config
     const firebaseConfig = {
       apiKey: "AIzaSyDg6hedgJB7nK3xVvIrxg04ouFVTkIHe2k",
       authDomain: "mecktech-bbc2e.firebaseapp.com",
@@ -78,37 +65,30 @@
       messagingSenderId: "790927325648",
       appId: "1:790927325648:web:9135f13e7dafba1f0b21d5"
     };
-
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
+    let userData = {};
     let questions = [];
     let currentIndex = 0;
     let correctCount = 0;
-    let userData = {};
 
     function startAssessment() {
-      const name = document.getElementById('fullName').value.trim();
-      const email = document.getElementById('email').value.trim();
-      if (!name || !email) return alert("All fields are required");
+      const name = document.getElementById("fullName").value.trim();
+      const email = document.getElementById("email").value.trim();
+      if (!name || !email) return alert("Please fill all fields.");
 
       userData = { name, email };
-      document.getElementById('startForm').classList.add('hidden');
-      document.getElementById('quiz').classList.remove('hidden');
+      document.getElementById("startForm").style.display = "none";
+      document.getElementById("quiz").style.display = "block";
+
       loadQuestions();
     }
 
     function loadQuestions() {
-      db.ref('branding').once('value').then(snap => {
-        const branding = snap.val();
-        if (branding && branding.name) {
-          document.getElementById('brandTitle').innerText = branding.name + ' Assessment';
-        }
-      });
-
-      db.ref('questions').once('value', snap => {
+      db.ref("questions").once("value", snap => {
         const data = snap.val();
-        questions = Object.values(data || {});
+        questions = Object.values(data);
         currentIndex = 0;
         correctCount = 0;
         showQuestion();
@@ -117,7 +97,7 @@
 
     function showQuestion() {
       const q = questions[currentIndex];
-      const quiz = document.getElementById('quiz');
+      const quiz = document.getElementById("quiz");
       quiz.innerHTML = `
         <div class="question-box">
           <h3>Q${currentIndex + 1}: ${q.text}</h3>
@@ -125,68 +105,44 @@
             <div>
               <input type="radio" name="option" value="${i}" id="opt${i}" />
               <label for="opt${i}">${opt}</label>
-            </div>
-          `).join('')}
-          <button onclick="submitAnswer()">Next</button>
-        </div>
-      `;
+            </div>`).join("")}
+          <br><button onclick="submitAnswer()">Next</button>
+        </div>`;
     }
 
     function submitAnswer() {
-      const selected = document.querySelector('input[name="option"]:checked');
+      const selected = document.querySelector("input[name='option']:checked");
       if (!selected) return alert("Please select an answer.");
       const ans = parseInt(selected.value);
       if (ans === parseInt(questions[currentIndex].correct)) correctCount++;
       currentIndex++;
-      if (currentIndex < questions.length) {
-        showQuestion();
-      } else {
-        endQuiz();
-      }
+
+      if (currentIndex >= questions.length) endQuiz();
+      else showQuestion();
     }
 
     function endQuiz() {
-      const result = document.getElementById('result');
-      document.getElementById('quiz').classList.add('hidden');
+      document.getElementById("quiz").style.display = "none";
+      const result = document.getElementById("result");
 
-      // Save user score
-      db.ref("paidUsers").push({
-        name: userData.name,
-        email: userData.email,
+      // Save user result
+      const userId = db.ref("users").push().key;
+      db.ref("users/" + userId).set({
+        ...userData,
         score: correctCount
       });
 
-      db.ref("price").once("value").then(priceSnap => {
-        const price = priceSnap.val() || {};
-        const amount = price.discount || 149;
-        const original = price.original || 249;
+      // Payment + Certificate flow
+      const formLink = `https://docs.google.com/forms/d/e/1FAIpQLSfSKc44R0lQJls0Fok1ygRfsZfCLH_nj7OFfwZlaiS9tH-gow/viewform?usp=pp_url&entry.525457949=${encodeURIComponent(userData.name)}&entry.758965619=${encodeURIComponent(userData.email)}&entry.1611728617=${correctCount}`;
 
-        result.innerHTML = `
-          <h2>🎉 Congratulations!</h2>
-          <p>You scored ${correctCount}/${questions.length}</p>
-          <p>To receive your certificate, please complete the payment below:</p>
-          <button onclick="payNow()">Pay ₹${amount}</button>
-        `;
-        result.classList.remove('hidden');
-      });
-    }
-
-    function payNow() {
-      const url = `https://docs.google.com/forms/d/e/1FAIpQLSfSKc44R0lQJls0Fok1ygRfsZfCLH_nj7OFfwZlaiS9tH-gow/viewform?usp=pp_url&entry.525457949=${encodeURIComponent(userData.name)}&entry.758965619=${encodeURIComponent(userData.email)}&entry.1611728617=${correctCount}`;
-      window.open("https://razorpay.me/@mecktech", "_blank");
-
-      // Wait 3 seconds and open form
-      setTimeout(() => {
-        window.open(url, "_blank");
-        showThankYou();
-      }, 3000);
-    }
-
-    function showThankYou() {
-      document.getElementById('result').innerHTML = `
-        <h2>✅ Thank you!</h2>
-        <p>Your certificate will be sent to your email within 1–2 working days.</p>
+      result.innerHTML = `
+        <h2>Result: ${correctCount}/${questions.length}</h2>
+        <p>To receive your certificate, please complete the payment below:</p>
+        <a class="button" href="https://razorpay.me/@mecktech?amount=14900&currency=INR" target="_blank" onclick="setTimeout(() => window.open('${formLink}', '_blank'), 3000)">Pay ₹149</a>
+        <p style="margin-top:20px; font-size:14px;">After successful payment, your certificate form will automatically open.<br>Please submit the form to receive your certificate within 1–2 working days.</p>
       `;
+
+      result.style.display = "block";
     }
   </script>
 </body>
