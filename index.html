@@ -1,76 +1,74 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>MeckTech Assessment</title>
   <style>
     body {
-      background: #0d1117;
+      background: #0e0e0e;
       color: white;
       font-family: Arial, sans-serif;
       text-align: center;
       margin: 0;
+      padding: 20px;
     }
     .container {
       max-width: 600px;
       margin: auto;
-      padding: 30px;
+      padding: 20px;
+      background: #1e1e1e;
+      border-radius: 10px;
     }
     input, button {
       padding: 10px;
-      margin: 10px 0;
-      width: 90%;
+      margin: 8px;
       border-radius: 5px;
       border: none;
+      font-size: 16px;
     }
     button {
-      background: #28a745;
+      background-color: #4CAF50;
       color: white;
-      font-weight: bold;
       cursor: pointer;
     }
-    .question-box {
-      margin-top: 20px;
+    .logo {
+      width: 100px;
+      margin-bottom: 10px;
     }
-    .option-row {
+    .question {
+      margin-bottom: 20px;
+    }
+    .option {
       display: flex;
       justify-content: space-between;
-      margin: 10px 0;
-      background: #1f1f1f;
-      padding: 10px;
-      border-radius: 5px;
+      padding: 5px 0;
     }
-    #formDone {
-      margin-top: 20px;
-    }
-    a.button-link {
-      display: inline-block;
-      background: #28a745;
-      padding: 10px 20px;
-      color: white;
-      text-decoration: none;
-      border-radius: 5px;
-      margin-top: 10px;
+    .hidden {
+      display: none;
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <img src="https://i.imgur.com/HPLdK7V.png" width="100" />
+  <div class="container" id="startForm">
+    <img src="https://i.imgur.com/E7hC0NY.png" class="logo" />
     <h1>MeckTech Assessment</h1>
-
-    <div id="startForm">
-      <input id="fullName" placeholder="Full Name" /><br />
-      <input id="email" placeholder="Email" /><br />
-      <input id="address" placeholder="Address" /><br />
-      <button onclick="startAssessment()">Start Test</button>
-    </div>
-
-    <div id="quiz" style="display:none;"></div>
-    <div id="result" style="display:none;"></div>
+    <input id="name" type="text" placeholder="Full Name" /><br/>
+    <input id="email" type="email" placeholder="Email" /><br/>
+    <button onclick="startAssessment()">Start Assessment</button>
   </div>
 
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  <div class="container hidden" id="quiz"></div>
+  <div class="container hidden" id="result"></div>
+  <div class="container hidden" id="thankyou">
+    <h2>🎉 Thank You!</h2>
+    <p>Your certificate will be sent to your email within 1–2 working days.</p>
+  </div>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyDg6hedgJB7nK3xVvIrxg04ouFVTkIHe2k",
@@ -79,30 +77,29 @@
       projectId: "mecktech-bbc2e",
       storageBucket: "mecktech-bbc2e.appspot.com",
       messagingSenderId: "790927325648",
-      appId: "1:790927325648:web:9135f13e7dafba1f0b21d5",
+      appId: "1:790927325648:web:9135f13e7dafba1f0b21d5"
     };
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    let userData = {}, questions = [], currentIndex = 0, correctCount = 0;
+    let questions = [], currentIndex = 0, correctCount = 0;
+    let userData = {};
 
     function startAssessment() {
-      const name = document.getElementById('fullName').value.trim();
-      const email = document.getElementById('email').value.trim();
-      const address = document.getElementById('address').value.trim();
-      if (!name || !email || !address) return alert("Fill all fields");
-
-      userData = { name, email, address };
-      document.getElementById("startForm").style.display = "none";
-      document.getElementById("quiz").style.display = "block";
+      const name = document.getElementById("name").value.trim();
+      const email = document.getElementById("email").value.trim();
+      if (!name || !email) return alert("Please fill all fields");
+      userData = { name, email };
+      document.getElementById("startForm").classList.add("hidden");
+      document.getElementById("quiz").classList.remove("hidden");
       loadQuestions();
     }
 
     function loadQuestions() {
-      db.ref("questions").once("value", snap => {
-        const data = snap.val();
-        if (!data) return alert("No questions found");
+      db.ref("questions").once("value", snapshot => {
+        const data = snapshot.val();
+        if (!data) return alert("No questions available.");
         questions = Object.values(data);
         showQuestion();
       });
@@ -112,21 +109,21 @@
       const q = questions[currentIndex];
       const quiz = document.getElementById("quiz");
       quiz.innerHTML = `
-        <div class="question-box">
+        <div class="question">
           <h3>Q${currentIndex + 1}: ${q.text}</h3>
           ${q.options.map((opt, i) => `
-            <div class="option-row">
+            <div class="option">
               <span>${opt}</span>
-              <input type="radio" name="option" value="${i}" />
+              <input type="radio" name="option" value="${i}">
             </div>
-          `).join('')}
+          `).join("")}
           <button onclick="submitAnswer()">Next</button>
         </div>`;
     }
 
     function submitAnswer() {
       const selected = document.querySelector("input[name='option']:checked");
-      if (!selected) return alert("Please select an answer");
+      if (!selected) return alert("Select an answer.");
       const ans = parseInt(selected.value);
       if (ans === questions[currentIndex].correct) correctCount++;
       currentIndex++;
@@ -135,22 +132,30 @@
     }
 
     function endQuiz() {
-      document.getElementById("quiz").style.display = "none";
-      db.ref("paidUsers").push({ ...userData, score: correctCount });
+      document.getElementById("quiz").classList.add("hidden");
       const result = document.getElementById("result");
+      result.classList.remove("hidden");
+      const passed = correctCount >= 2;
+      
+      // Save result
+      db.ref("paidUsers").push({
+        name: userData.name,
+        email: userData.email,
+        score: correctCount
+      });
+
       result.innerHTML = `
-        <h2>Result: ${correctCount}/${questions.length}</h2>
-        ${correctCount >= 2
-          ? `<p>To receive your certificate, please complete the payment below:</p>
-             <a class="button-link" href="https://razorpay.me/@mecktech" target="_blank">Pay ₹149</a><br/>
-             <a class="button-link" onclick="openForm()">I've Paid — Fill Certificate Form</a>`
-          : `<p>Sorry, you need to score at least 2 to be eligible for the certificate.</p>`
-        }
-        <div id="formDone" style="display:none;">
-          <p>✅ Thank you! Your certificate will be sent to your email within 1–2 working days.</p>
-        </div>
+        <h2>MeckTech Assessment</h2>
+        <p>Result: ${correctCount}/${questions.length}</p>
+        ${passed ? `
+          <p>To receive your certificate, please complete the payment below:</p>
+          <button onclick="window.open('https://razorpay.me/@mecktech', '_blank')">Pay ₹149</button>
+          <br/><br/>
+          <button onclick="openForm()">I've Paid — Fill Certificate Form</button>
+        ` : `
+          <p>❌ You are not eligible for a certificate.</p>
+        `}
       `;
-      result.style.display = "block";
     }
 
     function openForm() {
@@ -159,7 +164,10 @@
         `&entry.758965619=${encodeURIComponent(userData.email)}` +
         `&entry.1611728617=${correctCount}`;
       window.open(url, "_blank");
-      document.getElementById("formDone").style.display = "block";
+      setTimeout(() => {
+        document.getElementById("result").classList.add("hidden");
+        document.getElementById("thankyou").classList.remove("hidden");
+      }, 500);
     }
   </script>
 </body>
