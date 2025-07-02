@@ -7,7 +7,7 @@
   <style>
     body {
       background: #0d1117;
-      color: white;
+      color: #fff;
       font-family: Arial, sans-serif;
       text-align: center;
       margin: 0;
@@ -25,10 +25,10 @@
       margin-bottom: 20px;
     }
 
-    input, button, select {
-      padding: 10px;
+    input, button {
+      padding: 12px;
       width: 90%;
-      margin: 10px auto;
+      margin: 10px 0;
       border-radius: 5px;
       border: none;
       font-size: 16px;
@@ -41,8 +41,11 @@
     }
 
     .question-box {
-      margin: 30px 0;
       text-align: left;
+    }
+
+    .question-box h3 {
+      font-size: 18px;
     }
 
     .question-box label {
@@ -57,19 +60,21 @@
 
     .strike {
       text-decoration: line-through;
-      color: #888;
-      margin-left: 5px;
+      color: #aaa;
+      font-size: 15px;
+      margin-left: 8px;
     }
 
-    #result button {
-      margin-top: 20px;
+    #formBtn {
+      display: none;
+      margin-top: 10px;
     }
   </style>
 </head>
 <body>
   <div class="container">
     <img src="mecktech-logo.png" alt="MeckTech Logo" class="logo" />
-    <h1>MeckTech Assessment</h1>
+    <h2>MeckTech Assessment</h2>
 
     <div id="startForm">
       <input type="text" id="fullName" placeholder="Full Name" required />
@@ -83,11 +88,12 @@
     <div id="result" style="display:none"></div>
   </div>
 
+  <!-- Firebase Scripts -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
   <script>
-    // Firebase config
+    // ✅ Firebase Config
     const firebaseConfig = {
       apiKey: "AIzaSyDg6hedgJB7nK3xVvIrxg04ouFVTkIHe2k",
       authDomain: "mecktech-bbc2e.firebaseapp.com",
@@ -95,97 +101,25 @@
       projectId: "mecktech-bbc2e",
       storageBucket: "mecktech-bbc2e.appspot.com",
       messagingSenderId: "790927325648",
-      appId: "1:790927325648:web:9135f13e7dafba1f0b21d5",
+      appId: "1:790927325648:web:9135f13e7dafba1f0b21d5"
     };
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    let userData = {};
     let questions = [];
     let currentIndex = 0;
     let correctCount = 0;
+    let userData = {};
 
     function startAssessment() {
       const name = document.getElementById("fullName").value.trim();
       const email = document.getElementById("email").value.trim();
       const address = document.getElementById("address").value.trim();
-      if (!name || !email) return alert("Please fill all required fields");
+
+      if (!name || !email) return alert("Please enter name and email");
 
       userData = { name, email, address };
 
       document.getElementById("startForm").style.display = "none";
-      document.getElementById("quiz").style.display = "block";
-
-      document.documentElement.requestFullscreen();
-      loadQuestions();
-    }
-
-    function loadQuestions() {
-      db.ref("questions").once("value", snap => {
-        const data = snap.val();
-        if (!data) return alert("No questions found.");
-        questions = Object.values(data);
-        showQuestion();
-      });
-    }
-
-    function showQuestion() {
-      const q = questions[currentIndex];
-      const quiz = document.getElementById("quiz");
-      quiz.innerHTML = `
-        <div class="question-box">
-          <h3>Q${currentIndex + 1}: ${q.text}</h3>
-          ${q.options.map((opt, i) => `
-            <label>
-              ${opt}
-              <input type="radio" name="option" value="${i}" />
-            </label>
-          `).join('')}
-          <button onclick="submitAnswer()">Next</button>
-        </div>
-      `;
-    }
-
-    function submitAnswer() {
-      const selected = document.querySelector('input[name="option"]:checked');
-      if (!selected) return alert("Please select an answer.");
-      const ans = parseInt(selected.value);
-      if (ans === parseInt(questions[currentIndex].correct)) correctCount++;
-      currentIndex++;
-      if (currentIndex >= questions.length) endQuiz();
-      else showQuestion();
-    }
-
-    function endQuiz() {
-      document.getElementById("quiz").style.display = "none";
-      const result = document.getElementById("result");
-
-      // Save score and user to Firebase
-      db.ref("paidUsers").push({
-        name: userData.name,
-        email: userData.email,
-        score: correctCount
-      });
-
-      result.innerHTML = `
-        <h2>🎉 Congratulations!</h2>
-        <p>Result: ${correctCount}/${questions.length}</p>
-        <p>To receive your certificate, please complete the payment below:</p>
-        <button onclick="openPaymentLink()">Pay ₹149 <span class="strike">₹249</span></button>
-        <br/>
-        <button id="formBtn" onclick="openForm()" style="display:none">I've Paid — Fill Certificate Form</button>
-      `;
-      result.style.display = "block";
-    }
-
-    function openPaymentLink() {
-      window.open("https://razorpay.me/@mecktech", "_blank");
-      setTimeout(() => {
-        document.getElementById("formBtn").style.display = "inline-block";
-      }, 2000);
-    }
-
-    function openForm() {
-      const url = new URL("https://docs.google.com/forms/d/e/1FAIpQLSfSKc44R0lQJls0Fok1ygRfsZfCLH_nj7OFfwZlaiS9tH-gow/viewform");
-      url.searchParams.append("entry.525457949", u
+      docume
