@@ -10,24 +10,28 @@
   <style>
     body {
       margin: 0;
-      background: #121212;
-      color: white;
-      font-family: sans-serif;
+      background-color: #121212;
+      color: #fff;
+      font-family: 'Segoe UI', sans-serif;
     }
-    .main {
+    .container {
       max-width: 600px;
-      margin: auto;
+      margin: 0 auto;
       padding: 20px;
     }
     .logo {
       display: block;
-      margin: 10px auto;
+      margin: 20px auto 10px;
       width: 100px;
     }
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
     .box {
-      background: #1f1f1f;
+      background: #1e1e1e;
       padding: 20px;
-      border-radius: 10px;
+      border-radius: 8px;
       margin-bottom: 20px;
     }
     input, button {
@@ -36,79 +40,78 @@
       margin: 10px 0;
       border-radius: 6px;
       border: none;
+      font-size: 16px;
     }
     button {
-      background: #00b894;
+      background-color: #00b894;
       color: white;
       font-weight: bold;
       cursor: pointer;
     }
     .option {
-      background: #2c2c2c;
+      background: #2a2a2a;
       padding: 10px;
-      margin: 8px 0;
+      margin: 10px 0;
       border-radius: 6px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      cursor: pointer;
     }
     .hidden {
       display: none;
     }
-    .price-row {
+    .price-box {
       text-align: center;
-      margin-bottom: 10px;
+      margin-top: 10px;
     }
-    .price-row span.slash {
+    .price-box .slash {
       text-decoration: line-through;
-      color: gray;
+      color: #999;
       margin-left: 10px;
     }
-    .thankyou {
+    .thank-you {
       text-align: center;
-    }
-    .thankyou p {
-      font-size: 16px;
     }
     .disclaimer {
       font-size: 11px;
       color: #888;
-      margin-top: 30px;
+      margin-top: 20px;
     }
   </style>
 </head>
 <body>
-  <div class="main">
+  <div class="container">
     <img src="mecktech-logo.png" class="logo">
-    <h2 style="text-align:center" id="brandName">MeckTech</h2>
+    <h2 id="brandName">MeckTech</h2>
 
-    <div id="userForm" class="box">
+    <div class="box" id="userForm">
       <input type="text" id="name" placeholder="Enter your name">
       <input type="email" id="email" placeholder="Enter your email">
       <button onclick="startTest()">Start Test</button>
     </div>
 
-    <div id="quizSection" class="box hidden">
+    <div class="box hidden" id="quizBox">
       <div id="questionBox"></div>
       <button onclick="nextQuestion()">Next</button>
     </div>
 
-    <div id="resultSection" class="box hidden">
+    <div class="box hidden" id="resultBox">
       <h3 id="scoreText"></h3>
-      <div class="price-row">
-        <span><b>Pay ₹149</b></span>
-        <span class="slash">₹219</span>
+      <div class="price-box">
+        <span><b>Pay ₹149</b></span><span class="slash">₹219</span>
       </div>
       <button onclick="payNow()">Pay Now</button>
     </div>
 
-    <div id="thankSection" class="box hidden thankyou">
-      <h2>Thank You!</h2>
-      <p>Your certificate will be sent to your registered email within 1–2 working days.</p>
-      <p>For support: <a href="mailto:royalmanagement02@gmail.com" style="color:#00bcd4;">royalmanagement02@gmail.com</a></p>
-      <div class="disclaimer">
-        MeckTech doesn't claim any partnership with any other company. This assessment is based on your personal knowledge about CS/AI-ML course. We hope our certificate helps you in future. All the best.
+    <div class="box hidden" id="thankBox">
+      <div class="thank-you">
+        <h2>Thank You!</h2>
+        <p>Your payment was successful.</p>
+        <p>Your certificate will be sent to your registered email within 1–2 working days.</p>
+        <p>Contact: <a href="mailto:royalmanagement02@gmail.com" style="color:#4dd0e1">royalmanagement02@gmail.com</a></p>
+        <div class="disclaimer">
+          MeckTech doesn't claim any partnership with any other company. This assessment is based on your personal knowledge about CS/AI-ML course. We hope our certificate helps you in the future. All the best.
+        </div>
       </div>
     </div>
   </div>
@@ -142,7 +145,7 @@
       if (!name || !email) return alert("Please fill all fields");
       user = { name, email };
       document.getElementById("userForm").classList.add("hidden");
-      document.getElementById("quizSection").classList.remove("hidden");
+      document.getElementById("quizBox").classList.remove("hidden");
       showQuestion();
     }
 
@@ -163,15 +166,15 @@
     }
 
     function nextQuestion() {
-      if (selected === -1) return alert("Select an option");
+      if (selected === -1) return alert("Please select an option");
       if (selected == questions[current].correct) score++;
       current++;
       selected = -1;
       if (current < questions.length) {
         showQuestion();
       } else {
-        document.getElementById("quizSection").classList.add("hidden");
-        document.getElementById("resultSection").classList.remove("hidden");
+        document.getElementById("quizBox").classList.add("hidden");
+        document.getElementById("resultBox").classList.remove("hidden");
         document.getElementById("scoreText").innerText = `Your Score: ${score}/${questions.length}`;
       }
     }
@@ -182,7 +185,7 @@
         amount: 14900,
         currency: "INR",
         name: "MeckTech",
-        description: "Assessment Payment",
+        description: "Assessment Fee",
         prefill: {
           name: user.name,
           email: user.email
@@ -194,8 +197,8 @@
             email: user.email,
             score: score
           });
-          document.getElementById("resultSection").classList.add("hidden");
-          document.getElementById("thankSection").classList.remove("hidden");
+          document.getElementById("resultBox").classList.add("hidden");
+          document.getElementById("thankBox").classList.remove("hidden");
         }
       };
       const rzp = new Razorpay(options);
