@@ -105,7 +105,11 @@
       document.getElementById("result").innerHTML = `
         <h2>Your Score: ${correctCount}/${questions.length}</h2>
         <p>To get your certificate, please complete payment below:</p>
-        <button onclick="payWithRazorpay()">Pay ₹149</button>
+        <button onclick="payWithRazorpay()" style="padding: 10px 20px; font-size: 16px; background-color: #28a745; color: white; border: none; border-radius: 6px; display: flex; align-items: center; gap: 10px; justify-content: center;">
+  <span>Pay ₹149</span>
+  <span style="text-decoration: line-through; color: #ccc; font-size: 14px;">₹219</span>
+</button>
+
         <p>Your certificate will be emailed to you within 1–2 working days.</p>
         <p>You performed assessment well, All the best for future.</p>
       `;
@@ -113,24 +117,32 @@
     }
 
     function payWithRazorpay() {
-      const options = {
-        key: "rzp_live_w7rhHpCVeP0Rqg",             // ← replace with your Key ID
-        amount: 14900,                           // ₹149 in paise
-        currency: "INR",
-        name: "MeckTech Technologies",
-        description: "Payment for Assessment Certificate",
-        handler: function (response) {
-          // payment successful
-          document.getElementById("result").style.display = "none";
-          document.getElementById("thankyou").style.display = "block";
-        },
-        prefill: {
-          name: userData.name,
-          email: userData.email
-        }
-      };
-      const rzp = new Razorpay(options);
-      rzp.open();
+  const options = {
+    key: "rzp_live_w7rhHpCVeP0Rqg",
+    amount: 14900,
+    currency: "INR",
+    name: "MeckTech Technologies",
+    description: "Payment for CS/AIML Certificate",
+    prefill: {
+      name: userData.name,
+      email: userData.email
+    },
+    handler: function (response) {
+      // ✅ Save paid user only after successful payment
+      const key = db.ref("users").push().key;
+      db.ref("users/" + key).set({
+        name: userData.name,
+        email: userData.email,
+        score: correctCount
+      });
+
+      // ✅ Show thank you message
+      document.getElementById("Result").style.display = "none";
+      document.getElementById("ThankYou").style.display = "block";
+    }
+  };
+  const rzp = new Razorpay(options);
+  rzp.open();
     }
   </script>
 </body>
