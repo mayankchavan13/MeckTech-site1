@@ -1,82 +1,45 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>MeckTech Assessment</title>
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  <title>MeckTech Technologies</title>
   <style>
-    body {
-      background-color: #111;
-      color: white;
-      font-family: 'Segoe UI', sans-serif;
-      padding: 20px;
-    }
-    .center {
-      text-align: center;
-      margin-top: 30px;
-    }
-    .question-box {
-      background-color: #1c1c1c;
-      padding: 20px;
-      border-radius: 10px;
-      margin-bottom: 20px;
-    }
-    .option {
-      display: flex;
-      justify-content: space-between;
-      background: #222;
-      padding: 10px;
-      border-radius: 6px;
-      margin-top: 10px;
-      cursor: pointer;
-    }
-    .hidden { display: none; }
-    button {
-      padding: 10px 20px;
-      background-color: #28a745;
-      border: none;
-      color: white;
-      border-radius: 6px;
-      font-size: 16px;
-      cursor: pointer;
-    }
+    body { background: #0f0f0f; color: #fff; font-family: 'Segoe UI', sans-serif; text-align: center; padding: 30px 20px; }
+    .logo { max-width: 120px; margin-bottom: 20px; }
+    input[type="text"], input[type="email"] { padding: 12px; width: 260px; font-size: 16px; margin: 8px; border-radius: 6px; border: none; }
+    button, .button { background-color: #28a745; color: white; padding: 10px 20px; font-size: 16px; border: none; cursor: pointer; margin-top: 10px; border-radius: 6px; }
+    .question-box { background: #1c1c1c; padding: 25px; border-radius: 10px; max-width: 600px; margin: 20px auto; }
+    .option-row { text-align: left; margin: 10px auto; max-width: 500px; background: #2a2a2a; padding: 10px; border-radius: 5px; }
+    .option-row input { margin-right: 10px; }
   </style>
 </head>
 <body>
-  <div class="center">
-    <h1 id="brandName">MeckTech</h1>
-    <img src="mecktech-logo.png" alt="Logo" width="120" /><br><br>
-    <div id="userForm">
-      <input type="text" id="name" placeholder="Full Name" /><br><br>
-      <input type="email" id="email" placeholder="Email" /><br><br>
-      <button onclick="startTest()">Start Test</button>
-    </div>
 
-    <div id="quizSection" class="hidden">
-      <div id="questionContainer"></div>
-      <button onclick="nextQuestion()">Next</button>
-    </div>
+  <img src="mecktech-logo.png" class="logo" alt="MeckTech Logo" />
+  <h1>MeckTech CS/AIML Assessment</h1>
 
-    <div id="result" class="hidden">
-      <h2 id="scoreText"></h2>
-      <p>To get your certificate, please complete payment:</p>
-      <div style="display:flex; justify-content:center;">
-        <button onclick="payWithRazorpay()" style="display:flex; align-items:center; gap:10px;">
-          <span>Pay ₹149</span>
-          <span style="text-decoration: line-through; color:#ccc; font-size: 14px;">₹219</span>
-        </button>
-      </div>
-    </div>
-
-    <div id="thankyou" class="hidden">
-      <h2>Thank you!</h2>
-      <p>Your certificate will be sent to your email within 1–2 working days.</p>
-    </div>
+  <div id="startForm">
+    <input type="text" id="fullName" placeholder="Full Name"><br>
+    <input type="email" id="email" placeholder="Email"><br>
+    <button onclick="startAssessment()">Start Assessment</button>
   </div>
 
+  <div id="quiz" style="display:none;"></div>
+  <div id="result" style="display:none;"></div>
+  <div id="thankyou" style="display:none;">
+    <h2>🎉 congrats!</h2>
+    <p>Your certificate will be emailed to you within 1–2 working days.</p>
+  </div>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+  <!-- Razorpay Checkout -->
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
   <script>
+    // Firebase Config
     const firebaseConfig = {
       apiKey: "AIzaSyDg6hedgJB7nK3xVvIrxg04ouFVTkIHe2k",
       authDomain: "mecktech-bbc2e.firebaseapp.com",
@@ -89,91 +52,101 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    let questions = [];
-    let current = 0;
-    let correctCount = 0;
-    let userData = {};
+    let userData = {}, questions = [], currentIndex = 0, correctCount = 0;
 
-    db.ref("branding/name").once("value", snap => {
-      if (snap.exists()) document.getElementById("brandName").innerText = snap.val();
-    });
-
-    db.ref("questions").once("value", snap => {
-      snap.forEach(child => questions.push(child.val()));
-    });
-
-    function startTest() {
-      const name = document.getElementById("name").value;
-      const email = document.getElementById("email").value;
-      if (!name || !email) return alert("Please fill all fields");
+    function startAssessment() {
+      const name = document.getElementById("fullName").value.trim();
+      const email = document.getElementById("email").value.trim();
+      if (!name || !email) return alert("Please fill all fields.");
       userData = { name, email };
-
-      document.getElementById("userForm").classList.add("hidden");
-      document.getElementById("quizSection").classList.remove("hidden");
-      loadQuestion();
+      document.getElementById("startForm").style.display = "none";
+      document.getElementById("quiz").style.display = "block";
+      loadQuestions();
     }
 
-    function loadQuestion() {
-      const q = questions[current];
-      const qBox = document.getElementById("questionContainer");
-      qBox.innerHTML = `<div class="question-box">
-        <h3>Q${current + 1}: ${q.text}</h3>
-        ${q.options.map((opt, i) =>
-          `<div class="option" onclick="selectOption(${i})">${opt}<input type="radio" name="option" value="${i}" /></div>`
-        ).join("")}
-      </div>`;
+    function loadQuestions() {
+      db.ref("questions").once("value", snap => {
+        const data = snap.val();
+        if (!data) return alert("No questions found in database.");
+        questions = Object.values(data);
+        currentIndex = 0; correctCount = 0;
+        showQuestion();
+      });
     }
 
-    let selected = -1;
-    function selectOption(i) {
-      selected = i;
-      const radios = document.querySelectorAll("input[type='radio']");
-      radios.forEach(r => r.checked = false);
-      radios[i].checked = true;
+    function showQuestion() {
+      const q = questions[currentIndex];
+      const quiz = document.getElementById("quiz");
+      quiz.innerHTML = `
+        <div class="question-box">
+          <h3>Q${currentIndex + 1}: ${q.text}</h3>
+          ${q.options.map((opt, i) => `
+            <div class="option-row">
+              <label><input type="radio" name="option" value="${i}">${opt}</label>
+            </div>`).join('')}
+          <br><button onclick="submitAnswer()">Next</button>
+        </div>`;
     }
 
-    function nextQuestion() {
-      if (selected === -1) return alert("Please select an option.");
-      if (selected == questions[current].correct) correctCount++;
+    function submitAnswer() {
+      const sel = document.querySelector("input[name='option']:checked");
+      if (!sel) return alert("Please select an option.");
+      if (parseInt(sel.value) === parseInt(questions[currentIndex].correct)) correctCount++;
+      currentIndex++;
+      if (currentIndex >= questions.length) endQuiz();
+      else showQuestion();
+    }
 
-      selected = -1;
-      current++;
-      if (current < questions.length) {
-        loadQuestion();
-      } else {
-        document.getElementById("quizSection").classList.add("hidden");
-        document.getElementById("scoreText").innerText = `Your Score: ${correctCount}/${questions.length}`;
-        document.getElementById("result").classList.remove("hidden");
-      }
+    function endQuiz() {
+      document.getElementById("quiz").style.display = "none";
+      // Save result
+      const key = db.ref("users").push().key;
+      db.ref("users/" + key).set({ ...userData, score: correctCount });
+
+      document.getElementById("result").innerHTML = `
+        <h2>Your Score: ${correctCount}/${questions.length}</h2>
+        <p>To get your certificate, please complete payment below:</p>
+<div style="display: flex; justify-content: center; margin-top: 20px;">
+  <button onclick="payWithRazorpay()" style="padding: 10px 20px; font-size: 16px; background-color: #28a745; color: white; border: none; border-radius: 6px; display: flex; align-items: center; gap: 10px;">
+    <span>Pay ₹149</span>
+    <span style="text-decoration: line-through; color: #ccc; font-size: 14px;">₹219</span>
+  </button>
+</div>
+
+
+        <p>Your certificate will be emailed to you within 1–2 working days.</p>
+        <p>You performed assessment well, All the best for future.</p>
+      `;
+      document.getElementById("result").style.display = "block";
     }
 
     function payWithRazorpay() {
-      const options = {
-        key: "YOUR_LIVE_RAZORPAY_KEY_HERE",
-        amount: 14900,
-        currency: "INR",
-        name: "MeckTech",
-        description: "Assessment Certificate",
-        prefill: {
-          name: userData.name,
-          email: userData.email
-        },
-        handler: function (response) {
-          // ✅ SAVE ONLY AFTER SUCCESSFUL PAYMENT
-          const key = db.ref("users").push().key;
-          db.ref("users/" + key).set({
-            name: userData.name,
-            email: userData.email,
-            score: correctCount
-          });
+  const options = {
+    key: "rzp_live_w7rhHpCVeP0Rqg",
+    amount: 14900,
+    currency: "INR",
+    name: "MeckTech Technologies",
+    description: "Payment for CS/AIML Certificate",
+    prefill: {
+      name: userData.name,
+      email: userData.email
+    },
+    handler: function (response) {
+      // ✅ Save paid user only after successful payment
+      const key = db.ref("users").push().key;
+      db.ref("users/" + key).set({
+        name: userData.name,
+        email: userData.email,
+        score: correctCount
+      });
 
-          document.getElementById("result").classList.add("hidden");
-          document.getElementById("thankyou").classList.remove("hidden");
-        }
-      };
-
-      const rzp = new Razorpay(options);
-      rzp.open();
+      // ✅ Show thank you message
+      document.getElementById("Result").style.display = "none";
+      document.getElementById("ThankYou").style.display = "block";
+    }
+  };
+  const rzp = new Razorpay(options);
+  rzp.open();
     }
   </script>
 </body>
