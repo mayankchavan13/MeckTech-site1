@@ -48,6 +48,22 @@
     .question-box {
       margin-top: 30px;
     }
+    .option {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #1a1a1a;
+  padding: 10px 15px;
+  margin: 10px 0;
+  border-radius: 6px;
+  color: white;
+  font-size: 16px;
+}
+
+.option input[type="radio"] {
+  transform: scale(1.3);
+}
+
   </style>
 </head>
 <body>
@@ -110,19 +126,13 @@
     }
 
     function showQuestion() {
-      const q = questions[currentIndex];
-      const quiz = document.getElementById("quiz");
-      quiz.innerHTML = `
-        <div class="question">
-          <h3>Q${currentIndex + 1}: ${q.text}</h3>
-          ${q.options.map((opt, i) => `
-            <div class="option">
-              <span>${opt}</span>
-              <input type="radio" name="option" value="${i}">
-            </div>
-          `).join("")}
-          <button onclick="submitAnswer()">Next</button>
-        </div>`;
+      ${q.options.map((opt, i) => `
+  <label class="option">
+    <span>${opt}</span>
+    <input type="radio" name="option" value="${i}" />
+  </label>
+`).join("")}
+
     }
 
     function submitAnswer() {
