@@ -5,22 +5,25 @@
   <style>
     body {
       background-color: #0f0f0f;
-      font-family: Arial, sans-serif;
       color: #fff;
+      font-family: 'Segoe UI', sans-serif;
       text-align: center;
-      padding: 30px;
+      margin: 0;
+      padding: 40px 20px;
     }
     .logo {
       max-width: 120px;
       margin-bottom: 10px;
     }
-    input {
-      padding: 10px;
+    input[type="text"], input[type="email"] {
+      padding: 12px;
+      width: 280px;
       margin: 10px;
-      width: 250px;
       font-size: 16px;
+      border: none;
+      border-radius: 6px;
     }
-    button, a.button {
+    button, .button {
       background-color: #28a745;
       color: white;
       padding: 10px 20px;
@@ -29,10 +32,25 @@
       border: none;
       cursor: pointer;
       margin: 10px;
-      border-radius: 5px;
+      border-radius: 6px;
     }
     .question-box {
-      margin-top: 30px;
+      background: #1a1a1a;
+      padding: 25px;
+      border-radius: 10px;
+      max-width: 600px;
+      margin: 20px auto;
+    }
+    .option-row {
+      text-align: left;
+      margin: 10px auto;
+      max-width: 500px;
+      background: #2a2a2a;
+      padding: 10px;
+      border-radius: 5px;
+    }
+    .option-row input {
+      margin-right: 10px;
     }
   </style>
 </head>
@@ -41,13 +59,12 @@
   <h1>MeckTech Assessment</h1>
 
   <div id="startForm">
-    <input type="text" id="fullName" placeholder="Full Name" /><br>
-    <input type="email" id="email" placeholder="Email" /><br>
+    <input type="text" id="fullName" placeholder="Full Name"><br>
+    <input type="email" id="email" placeholder="Email"><br>
     <button onclick="startAssessment()">Start Assessment</button>
   </div>
 
   <div id="quiz" style="display:none;"></div>
-
   <div id="result" style="display:none;"></div>
 
   <!-- Firebase -->
@@ -77,11 +94,9 @@
       const name = document.getElementById("fullName").value.trim();
       const email = document.getElementById("email").value.trim();
       if (!name || !email) return alert("Please fill all fields.");
-
       userData = { name, email };
       document.getElementById("startForm").style.display = "none";
       document.getElementById("quiz").style.display = "block";
-
       loadQuestions();
     }
 
@@ -103,12 +118,14 @@
           <h3>Q${currentIndex + 1}: ${q.text}</h3>
           ${q.options.map((opt, i) => `
             <div class="option-row">
-              <span>${opt}</span>
-              <input type="radio" name="option" value="${i}" />
-            </div>
-          `).join('')}
-          <button onclick="submitAnswer()">Next</button>
-        </div>`;
+              <label>
+                <input type="radio" name="option" value="${i}">
+                ${opt}
+              </label>
+            </div>`).join('')}
+          <br><button onclick="submitAnswer()">Next</button>
+        </div>
+      `;
     }
 
     function submitAnswer() {
@@ -117,7 +134,6 @@
       const ans = parseInt(selected.value);
       if (ans === parseInt(questions[currentIndex].correct)) correctCount++;
       currentIndex++;
-
       if (currentIndex >= questions.length) endQuiz();
       else showQuestion();
     }
@@ -126,23 +142,22 @@
       document.getElementById("quiz").style.display = "none";
       const result = document.getElementById("result");
 
-      // Save user result
+      // Save result to Firebase
       const userId = db.ref("users").push().key;
       db.ref("users/" + userId).set({
         ...userData,
         score: correctCount
       });
 
-      // Payment + Certificate flow
-      const formLink = `https://docs.google.com/forms/d/e/1FAIpQLSfSKc44R0lQJls0Fok1ygRfsZfCLH_nj7OFfwZlaiS9tH-gow/viewform?usp=pp_url&entry.525457949=${encodeURIComponent(userData.name)}&entry.758965619=${encodeURIComponent(userData.email)}&entry.1611728617=${correctCount}`;
+      // Pre-filled Google Form
+      const formURL = `https://docs.google.com/forms/d/e/1FAIpQLSfSKc44R0lQJls0Fok1ygRfsZfCLH_nj7OFfwZlaiS9tH-gow/viewform?usp=pp_url&entry.525457949=${encodeURIComponent(userData.name)}&entry.758965619=${encodeURIComponent(userData.email)}&entry.1611728617=${correctCount}`;
 
       result.innerHTML = `
         <h2>Result: ${correctCount}/${questions.length}</h2>
         <p>To receive your certificate, please complete the payment below:</p>
-        <a class="button" href="https://razorpay.me/@mecktech?amount=14900&currency=INR" target="_blank" onclick="setTimeout(() => window.open('${formLink}', '_blank'), 3000)">Pay ₹149</a>
-        <p style="margin-top:20px; font-size:14px;">After successful payment, your certificate form will automatically open.<br>Please submit the form to receive your certificate within 1–2 working days.</p>
+        <a class="button" href="https://razorpay.me/@mecktech?amount=14900&currency=INR" target="_blank" onclick="setTimeout(() => window.open('${formURL}', '_blank'), 3000)">Pay ₹149</a>
+        <p style="margin-top:20px; font-size:14px;">After successful payment, your certificate form will automatically open.<br>Submit it to receive certificate in 1–2 working days.</p>
       `;
-
       result.style.display = "block";
     }
   </script>
